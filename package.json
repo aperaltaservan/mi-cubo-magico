@@ -1,0 +1,12 @@
+{
+  "name": "cubo-magico",
+  "version": "1.0.0",
+  "description": "Aprende a resolver el cubo de Rubik con un cubo inteligente Xiaomi/Giiker",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node test/test.js && node test/protocol.js && node test/geometry.js && node test/simulate.js && node test/algs.js && node test/casos.js && node test/stats.js && node test/trainer.js",
+    "start": "node server.js",
+    "build": "node dev/build_oll.js && node dev/build_f2l.js"
+  }
+}

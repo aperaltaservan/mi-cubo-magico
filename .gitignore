@@ -1,0 +1,12 @@
+# dependencias (el proyecto no usa ninguna, pero por si acaso)
+node_modules/
+package-lock.json
+
+# basura del sistema
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ficheros temporales
+*.log
+/tmp/
