@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b1033">
+<title>Mi Cubo Mágico</title>
+<link rel="stylesheet" href="css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>">
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ INICIO ============ -->
+  <section id="screen-home" class="screen active">
+    <div class="spacer"></div>
+    <div class="big-emoji">🧩</div>
+    <h1>Mi Cubo Mágico</h1>
+    <p class="lead">Aprende a resolver el cubo paso a paso</p>
+
+    <button class="btn primary" id="btn-connect">
+      <span class="emoji">🔵</span>
+      <span>Conectar mi cubo<small>Cubo inteligente Xiaomi / GiiKER</small></span>
+    </button>
+
+    <button class="btn blue" id="btn-nocube">
+      <span class="emoji">🎮</span>
+      <span>Jugar sin cubo<small>Con los botones de la pantalla</small></span>
+    </button>
+
+    <button class="btn ghost" id="btn-scan">🔍 No sale mi cubo en la lista</button>
+
+    <div class="spacer"></div>
+    <p class="note" id="home-note"></p>
+  </section>
+
+  <!-- ============ AYUDA BLUETOOTH ============ -->
+  <section id="screen-scan" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="home">←</button>
+      <div class="title">Buscar el cubo</div>
+    </div>
+    <p class="note" style="text-align:left">
+      Tu cubo debería salir en la lista con un nombre que empieza por <b>Gi</b>
+      (por ejemplo <code>GiC41183</code>). Si no sale, es que no está emitiendo.
+      Repasa esto por orden:
+    </p>
+    <ol class="note" style="text-align:left;line-height:1.7">
+      <li><b>La pila.</b> El Xiaomi Smart Rubik's Cube lleva <b>pila de botón</b>
+        (no se carga por USB). Si está gastada, el cubo enciende a ratos pero no
+        llega a emitir. Es la causa más habitual: prueba con una pila nueva.</li>
+      <li><b>Despierta el cubo</b>: gira una cara justo antes de darle a buscar.
+        Se duerme en un par de minutos y deja de anunciarse.</li>
+      <li><b>Ciérralo en el móvil</b>. Si la app del cubo lo tiene cogido, el
+        ordenador no lo verá. Ciérrala y desconéctalo del móvil.</li>
+      <li><b>Quítalo de los dispositivos de Windows</b> si lo emparejaste alguna vez
+        (Configuración → Bluetooth). Estos cubos no se emparejan: el navegador
+        habla con ellos directamente.</li>
+      <li><b>Bluetooth del ordenador</b>: <span id="scan-avail">comprobando…</span></li>
+    </ol>
+    <p class="note" style="text-align:left">
+      El botón de abajo busca <b>sin ningún filtro</b>. Sirve para saber de quién es
+      la culpa: si salen otros aparatos pero no el cubo, el problema es del cubo;
+      si no sale absolutamente nada, es del Bluetooth del ordenador.
+    </p>
+    <button class="btn primary" id="btn-scan-all">
+      <span class="emoji">🔍</span>
+      <span>Ver todos los aparatos<small>Sin filtros: busca el tuyo en la lista</small></span>
+    </button>
+    <p class="note" id="scan-note"></p>
+    <div id="scan-report" class="instr hidden" style="text-align:left;font-size:.8rem"></div>
+    <div class="spacer"></div>
+  </section>
+
+  <!-- ============ CALIBRACIÓN ============ -->
+  <section id="screen-cal" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="menu">←</button>
+      <div class="title">Enseñar los colores</div>
+    </div>
+    <div class="steps" id="cal-prog"></div>
+    <div class="spacer"></div>
+    <div class="calface" id="cal-emoji">👋</div>
+    <h2 style="text-align:center" id="cal-title">Vamos a conocer tu cubo</h2>
+    <p class="note" id="cal-text">
+      Cada cubo llama a sus caras a su manera. Vas a girar las seis caras una vez
+      y así aprendo el tuyo de verdad, sin suposiciones.
+    </p>
+    <div id="cal-choice" class="swatches hidden"></div>
+    <div class="spacer"></div>
+    <button class="btn primary" id="cal-start">Empezar</button>
+    <button class="btn ghost" id="cal-skip">Saltar (arriesgado)</button>
+  </section>
+
+  <!-- ============ MENÚ ============ -->
+  <section id="screen-menu" class="screen">
+    <div class="topbar">
+      <div class="title">Mi Cubo Mágico</div>
+      <button class="chip" id="chip-sync">·</button>
+      <button class="icon-btn on" id="btn-voice" title="Voz">🔊</button>
+    </div>
+
+    <button class="btn primary" data-go="kids">
+      <span class="emoji">👶</span>
+      <span>Para peques<small>Juegos para empezar de cero</small></span>
+    </button>
+
+    <button class="btn blue" data-go="tutorial">
+      <span class="emoji">📚</span>
+      <span>Aprender a resolverlo<small>Método principiante, lección a lección</small></span>
+    </button>
+
+    <button class="btn" data-go="timer">
+      <span class="emoji">⏱️</span>
+      <span>Cronómetro<small>Mezclas y medias al estilo WCA</small></span>
+    </button>
+
+    <button class="btn" data-go="fridrich">
+      <span class="emoji">🚀</span>
+      <span>Fridrich (CFOP)<small>F2L, OLL y PLL con estadísticas</small></span>
+    </button>
+
+    <div class="spacer"></div>
+    <p class="note" id="menu-note"></p>
+    <button class="btn ghost" id="btn-recal">🎨 Volver a enseñar los colores</button>
+    <button class="btn ghost" id="btn-diag">🔧 Diagnóstico</button>
+  </section>
+
+  <!-- ============ PARA PEQUES ============ -->
+  <section id="screen-kids" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="menu">←</button>
+      <div class="title">Para peques</div>
+    </div>
+    <button class="btn primary" data-game="explore">
+      <span class="emoji">🎈</span>
+      <span>Conoce tu cubo<small>Gira caras y aprende sus colores</small></span>
+    </button>
+    <button class="btn blue" data-game="undo">
+      <span class="emoji">🔙</span>
+      <span>Deshaz la mezcla<small>Del 1 al 8 · el juego para empezar</small></span>
+    </button>
+    <button class="btn" data-game="solve">
+      <span class="emoji">🏆</span>
+      <span>Resuélvelo conmigo<small>El método completo, paso a paso</small></span>
+    </button>
+    <div class="spacer"></div>
+    <p class="note">Con 4 años, empieza por <b>Deshaz la mezcla</b> y quédate ahí unos días.</p>
+  </section>
+
+  <!-- ============ TUTORIAL ============ -->
+  <section id="screen-tutorial" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="menu">←</button>
+      <div class="title">Aprender a resolverlo</div>
+    </div>
+    <p class="lead" id="tut-estado">Ocho pasos. Uno cada vez.</p>
+    <button class="btn primary" id="tut-curso">
+      <span class="emoji">▶️</span>
+      <span>Curso guiado<small>De principio a fin, pasando de paso solo</small></span>
+    </button>
+    <div id="tut-lista"></div>
+    <div class="spacer"></div>
+    <p class="note">Toca un paso para ver la explicación y practicarlo con tu cubo.</p>
+  </section>
+
+  <section id="screen-lesson" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="tutorial">←</button>
+      <div class="title" id="les-titulo">Lección</div>
+    </div>
+    <div id="les-scene" class="scene" style="height:200px"></div>
+    <div id="les-formula" class="formula"></div>
+    <div class="instr" style="text-align:left">
+      <p class="kidtip" id="les-idea" style="font-weight:800;margin-top:0"></p>
+      <div id="les-texto"></div>
+      <p class="kidtip" id="les-truco"></p>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn ghost" id="les-demo">▶️ Ver el movimiento</button>
+      <button class="btn ghost" id="les-demo2" style="display:none"></button>
+    </div>
+    <button class="btn primary" id="les-practicar">🎯 Practicar con mi cubo</button>
+    <div class="spacer"></div>
+  </section>
+
+  <!-- ============ CRONÓMETRO ============ -->
+  <section id="screen-timer" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="menu">←</button>
+      <div class="title">Cronómetro</div>
+      <button class="icon-btn" id="tm-insp" title="Inspección 15s">👁️</button>
+    </div>
+    <div class="scramble" id="tm-scramble">—</div>
+    <div id="tm-scene" class="scene" style="height:168px;margin:2px 0 0"></div>
+    <div class="move-card" id="tm-move"></div>
+    <div class="timer-big" id="tm-display">0.00</div>
+    <p class="note" id="tm-estado"></p>
+    <div class="row" id="tm-penal" style="display:none">
+      <button class="btn ghost" data-pen="0">OK</button>
+      <button class="btn ghost" data-pen="2">+2</button>
+      <button class="btn ghost" data-pen="DNF">DNF</button>
+      <button class="btn ghost" data-pen="del">🗑️</button>
+    </div>
+    <div class="statgrid" id="tm-stats"></div>
+    <div class="historial" id="tm-historial"></div>
+    <div class="spacer"></div>
+    <div class="row">
+      <button class="btn ghost" id="tm-nueva">🔀 Otra mezcla</button>
+      <button class="btn ghost" id="tm-borrar">🗑️ Vaciar sesión</button>
+    </div>
+  </section>
+
+  <!-- ============ FRIDRICH ============ -->
+  <section id="screen-fridrich" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="menu">←</button>
+      <div class="title">Fridrich (CFOP)</div>
+    </div>
+    <div class="tabs" id="fr-tabs">
+      <button data-tab="guia" class="on">Guía</button>
+      <button data-tab="F2L">F2L<em>41</em></button>
+      <button data-tab="OLL">OLL<em>57</em></button>
+      <button data-tab="PLL">PLL<em>21</em></button>
+    </div>
+    <div id="fr-guia">
+      <div id="fr-scene" class="scene" style="height:190px"></div>
+      <div class="instr">
+        <div class="phase" id="fr-paso">—</div>
+        <div class="move-text" id="fr-caso" style="text-align:center">Mezcla el cubo</div>
+        <div class="move-card" id="fr-move"></div>
+        <div class="formula" id="fr-alg"></div>
+        <p class="kidtip" id="fr-tip"></p>
+      </div>
+      <p class="note">Mientras resuelves te digo en qué paso estás y qué caso de OLL o PLL
+      tienes delante, con su algoritmo.</p>
+    </div>
+    <div id="fr-casos" style="display:none">
+      <p class="lead" id="fr-resumen"></p>
+      <div class="casos" id="fr-lista"></div>
+    </div>
+    <div class="spacer"></div>
+  </section>
+
+  <!-- ============ ENTRENAR UN CASO ============ -->
+  <section id="screen-drill" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="fridrich">←</button>
+      <div class="title" id="dr-titulo">Caso</div>
+      <button class="icon-btn" id="dr-siguiente" title="Otro caso">🔀</button>
+    </div>
+    <div id="dr-scene" class="scene" style="height:200px"></div>
+    <div class="instr">
+      <div class="phase" id="dr-fase">Prepara el caso</div>
+      <div class="move-card" id="dr-move"></div>
+      <div class="formula" id="dr-formula"></div>
+      <p class="kidtip" id="dr-tip"></p>
+    </div>
+    <div class="timer-big" id="dr-tiempo" style="font-size:2.4rem;margin:8px 0">—</div>
+    <div class="statgrid" id="dr-stats"></div>
+
+    <div class="algos-cab">
+      <b>Algoritmos</b>
+      <span id="dr-algos-n"></span>
+    </div>
+    <div class="algos" id="dr-algos"></div>
+    <div class="row">
+      <button class="btn ghost" id="dr-grabar">🔴 Grabar con el cubo</button>
+      <button class="btn ghost" id="dr-escribir">✏️ Escribir</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn ghost" id="dr-auto">⚡ Prepararlo en la pantalla</button>
+  </section>
+
+  <!-- ============ NIVELES ============ -->
+  <section id="screen-levels" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="menu">←</button>
+      <div class="title">Deshaz la mezcla</div>
+    </div>
+    <p class="lead">Elige cuántos movimientos quieres deshacer</p>
+    <div class="levels" id="levels"></div>
+    <div class="spacer"></div>
+    <p class="note">Empieza por el 1. Cuando lo consigas se abre el siguiente.</p>
+  </section>
+
+  <!-- ============ JUEGO ============ -->
+  <section id="screen-play" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="menu">←</button>
+      <div class="title" id="play-title">Juego</div>
+      <button class="icon-btn" id="btn-detalle" title="Explicar cada movimiento">🔍</button>
+      <button class="icon-btn" id="btn-hint" title="Pista">💡</button>
+      <button class="icon-btn on" id="btn-voice2" title="Voz">🔊</button>
+    </div>
+
+    <div id="scene" class="scene"></div>
+
+    <div class="instr">
+      <div class="phase" id="play-phase"></div>
+      <div class="move-card" id="play-move"></div>
+      <p class="kidtip" id="play-tip"></p>
+      <div class="formula" id="play-formula"></div>
+    </div>
+
+    <div class="progress"><i id="play-bar" style="width:0%"></i></div>
+    <div class="steps" id="play-steps"></div>
+
+    <div class="pad hidden" id="pad"></div>
+    <div class="spacer"></div>
+    <button class="btn ghost hidden" id="play-action"></button>
+    <button class="btn ghost hidden" id="play-action2"></button>
+  </section>
+
+  <!-- ============ DIAGNÓSTICO ============ -->
+  <section id="screen-diag" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="menu">←</button>
+      <div class="title">Diagnóstico</div>
+    </div>
+    <div class="instr" style="text-align:left">
+      <p style="margin:.2em 0"><b>Estado:</b> <span id="d-conn">—</span></p>
+      <p style="margin:.2em 0"><b>Batería:</b> <span id="d-bat">—</span></p>
+      <p style="margin:.2em 0"><b>Último giro:</b> <span id="d-move">—</span></p>
+      <p style="margin:.2em 0"><b>El cubo:</b> <span id="d-state">—</span></p>
+      <p style="margin:.2em 0"><b>Paquete:</b> <code id="d-raw" style="font-size:.72rem;word-break:break-all">—</code></p>
+      <p style="margin:.6em 0 .2em"><b>Códigos del cubo → cara y color:</b></p>
+      <p style="margin:.2em 0"><code id="d-frame" style="font-size:.8rem">—</code></p>
+    </div>
+    <button class="btn ghost" id="d-invert">🔁 El cubo gira al revés</button>
+    <p class="note">Si al girar una cara la app dice otra cara distinta, vuelve a enseñar
+    los colores. Si gira en el sentido contrario, pulsa el botón de arriba.</p>
+    <div class="spacer"></div>
+  </section>
+
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

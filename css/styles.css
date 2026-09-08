@@ -1,0 +1,341 @@
+/* ===========================================================
+   Mi Cubo Magico — estilos
+   =========================================================== */
+:root {
+  --bg: #1b1033;
+  --bg2: #2d1b52;
+  --card: #ffffff;
+  --ink: #24123f;
+  --muted: #7a6a92;
+  --accent: #ffd93d;
+  --ok: #4caf50;
+  --warn: #ff8c42;
+  --radius: 22px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .28);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  background: radial-gradient(circle at 50% 0%, var(--bg2), var(--bg) 70%);
+  color: #fff;
+  font-family: 'Baloo 2', 'Segoe UI Rounded', 'Trebuchet MS', system-ui, sans-serif;
+  overscroll-behavior: none;
+  user-select: none;
+}
+
+#app {
+  max-width: 560px; margin: 0 auto; min-height: 100%;
+  display: flex; flex-direction: column; padding: 14px 16px 22px;
+}
+
+.screen { display: none; flex: 1; flex-direction: column; }
+.screen.active { display: flex; }
+
+h1 { font-size: 2.1rem; margin: .2em 0 .1em; text-align: center; letter-spacing: -.5px; }
+h2 { font-size: 1.35rem; margin: .2em 0; }
+p.lead { text-align: center; color: #cbbde0; margin: 0 0 18px; font-size: 1.02rem; }
+
+/* ---------- botones ---------- */
+.btn {
+  display: flex; align-items: center; gap: 12px; justify-content: center;
+  width: 100%; border: none; cursor: pointer;
+  font: inherit; font-weight: 700; font-size: 1.18rem;
+  padding: 18px 20px; border-radius: var(--radius);
+  background: var(--card); color: var(--ink);
+  box-shadow: var(--shadow); margin-bottom: 14px;
+  transition: transform .12s ease, filter .12s ease;
+}
+.btn:active { transform: scale(.97); filter: brightness(.95); }
+.btn.primary { background: linear-gradient(135deg, #ffd93d, #ffb03a); }
+.btn.blue { background: linear-gradient(135deg, #62b6ff, #4d96ff); color: #06224a; }
+.btn.ghost {
+  background: rgba(255, 255, 255, .1); color: #fff; box-shadow: none;
+  border: 2px solid rgba(255, 255, 255, .22); font-size: 1rem; padding: 13px;
+}
+.btn .emoji { font-size: 1.6rem; }
+.btn small { display: block; font-weight: 500; font-size: .82rem; color: var(--muted); }
+
+.row { display: flex; gap: 10px; }
+.row .btn { margin-bottom: 10px; }
+
+/* ---------- cabecera ---------- */
+.topbar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px; min-height: 44px;
+}
+.topbar .title { flex: 1; font-weight: 700; font-size: 1.1rem; }
+.icon-btn {
+  width: 44px; height: 44px; border-radius: 14px; border: none; cursor: pointer;
+  background: rgba(255, 255, 255, .12); color: #fff; font-size: 1.25rem;
+  display: grid; place-items: center;
+}
+.icon-btn.on { background: var(--accent); color: #3a2a00; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px; border-radius: 99px; font-size: .82rem; font-weight: 700;
+  background: rgba(255, 255, 255, .12); border: none; color: #fff; cursor: pointer;
+}
+.chip.ok { background: rgba(76, 175, 80, .3); }
+.chip.warn { background: rgba(255, 140, 66, .32); }
+
+/* ---------- escena 3D ---------- */
+.scene {
+  perspective: 1100px; display: grid; place-items: center;
+  height: 300px; margin: 4px 0 10px; touch-action: none; cursor: grab;
+}
+.cube3d {
+  position: relative; width: 0; height: 0;
+  transform-style: preserve-3d; transition: transform .55s ease;
+}
+.cubie { position: absolute; transform-style: preserve-3d; }
+.cubie-face {
+  position: absolute; inset: 0; background: #241733;
+  border-radius: 9px; border: 1px solid rgba(0, 0, 0, .45);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, .35);
+}
+.cubie-face.painted { box-shadow: inset 0 -6px 12px rgba(0, 0, 0, .22); }
+.cubie-face.hi {
+  outline: 4px solid #fff; outline-offset: -5px;
+  animation: pulse .9s ease-in-out infinite alternate;
+}
+@keyframes pulse { to { outline-color: rgba(255, 255, 255, .25); } }
+
+/* ---------- panel de instruccion ---------- */
+.instr {
+  background: var(--card); color: var(--ink); border-radius: var(--radius);
+  padding: 16px; box-shadow: var(--shadow); text-align: center;
+}
+.instr .phase {
+  font-size: .95rem; color: var(--muted); font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 7px; margin-bottom: 6px;
+}
+.move-card { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.face-chip {
+  width: 76px; height: 76px; border-radius: 20px; flex: none;
+  border: 4px solid rgba(0, 0, 0, .18); box-shadow: inset 0 -8px 14px rgba(0, 0, 0, .16);
+}
+.arrow { width: 66px; height: 66px; flex: none; }
+.move-text { font-size: 1.3rem; font-weight: 800; line-height: 1.2; text-align: left; }
+.move-text small { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); }
+.instr .kidtip { margin: 10px 0 0; font-size: .95rem; color: #55436e; }
+
+/* formula en curso */
+.formula { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+.formula span {
+  min-width: 34px; padding: 5px 8px; border-radius: 10px; font-weight: 800;
+  background: #efe9f7; color: #6b5b85; font-size: .95rem;
+}
+.formula span.now { background: var(--ink); color: #fff; transform: scale(1.12); }
+.formula span.done { opacity: .35; }
+
+/* ---------- progreso ---------- */
+.progress { height: 12px; border-radius: 99px; background: rgba(255, 255, 255, .14); overflow: hidden; margin: 12px 0 6px; }
+.progress i { display: block; height: 100%; background: linear-gradient(90deg, #6bcB77, #ffd93d); transition: width .35s ease; }
+.steps { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-bottom: 6px; }
+.steps b {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(255, 255, 255, .12); font-size: .9rem;
+}
+.steps b.done { background: var(--ok); }
+.steps b.now { background: var(--accent); color: #3a2a00; transform: scale(1.15); }
+
+/* ---------- teclado en pantalla ---------- */
+.pad { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 12px; }
+.pad button {
+  border: none; border-radius: 14px; padding: 10px 0 8px; cursor: pointer;
+  font: inherit; font-weight: 800; font-size: .9rem; color: #1c1030;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.pad button span { font-size: 1.1rem; }
+.pad button:active { transform: scale(.94); }
+
+/* ---------- tarjetas de nivel ---------- */
+.levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.levels button {
+  aspect-ratio: 1; border-radius: 18px; border: none; cursor: pointer;
+  background: var(--card); color: var(--ink); font: inherit; font-weight: 800; font-size: 1.4rem;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: var(--shadow);
+}
+.levels button .stars { font-size: .7rem; letter-spacing: 1px; }
+.levels button[disabled] { opacity: .35; cursor: default; }
+
+/* ---------- calibracion ---------- */
+.swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+.swatches button {
+  border: none; border-radius: 18px; padding: 22px 6px; cursor: pointer;
+  font: inherit; font-weight: 800; font-size: .95rem; color: #1c1030;
+  box-shadow: var(--shadow);
+}
+.calface { font-size: 3.4rem; text-align: center; margin: 6px 0; }
+
+/* ---------- varios ---------- */
+.note { font-size: .86rem; color: #bfb0d6; text-align: center; line-height: 1.45; }
+.note code { background: rgba(255, 255, 255, .12); padding: 1px 6px; border-radius: 6px; }
+.spacer { flex: 1; }
+.hidden { display: none !important; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+  background: #fff; color: var(--ink); padding: 13px 22px; border-radius: 99px;
+  font-weight: 700; box-shadow: var(--shadow); z-index: 50; animation: pop .3s ease;
+}
+@keyframes pop { from { transform: translate(-50%, 16px); opacity: 0; } }
+
+.confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 60; }
+.confetti i {
+  position: absolute; top: -14px; width: 11px; height: 16px; border-radius: 2px;
+  animation: fall linear forwards;
+}
+@keyframes fall {
+  to { transform: translateY(105vh) rotate(720deg); opacity: .85; }
+}
+
+.big-emoji { font-size: 4.5rem; text-align: center; margin: 10px 0; }
+
+@media (max-height: 700px) {
+  .scene { height: 240px; }
+  h1 { font-size: 1.7rem; }
+}
+
+.move-card { position: relative; }
+.move-x2 {
+  position: absolute; left: 96px; top: 50%; transform: translateY(-46%);
+  font-size: 1.5rem; font-weight: 900; color: #24123f;
+  background: #fff; border-radius: 8px; padding: 0 3px; pointer-events: none;
+}
+
+/* ---------- cronometro ---------- */
+.scramble {
+  background: rgba(255, 255, 255, .1); border-radius: 16px; padding: 12px 14px;
+  font-size: 1.02rem; font-weight: 700; text-align: center; line-height: 1.65;
+  letter-spacing: .4px; word-spacing: 4px;
+}
+.timer-big {
+  font-size: 4rem; font-weight: 800; text-align: center; margin: 12px 0 2px;
+  font-variant-numeric: tabular-nums; letter-spacing: -2px;
+}
+.timer-big.listo { color: #6bcB77; }
+.timer-big.esperando { color: var(--warn); }
+
+.statgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.statgrid div {
+  background: rgba(255, 255, 255, .09); border-radius: 14px; padding: 9px 6px; text-align: center;
+}
+.statgrid b { display: block; font-size: 1.02rem; font-variant-numeric: tabular-nums; }
+.statgrid span { font-size: .68rem; color: #bfb0d6; text-transform: uppercase; letter-spacing: .5px; }
+
+.historial { max-height: 180px; overflow-y: auto; }
+.historial div {
+  display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 10px;
+  font-size: .9rem; background: rgba(255, 255, 255, .05); margin-bottom: 4px; cursor: pointer;
+}
+.historial div b { width: 28px; color: var(--muted); font-size: .76rem; }
+.historial div span { flex: 1; font-variant-numeric: tabular-nums; font-weight: 700; }
+.historial div em { font-style: normal; font-size: .7rem; color: #bfb0d6; }
+.historial div.sel { background: rgba(255, 217, 61, .22); }
+
+/* ---------- pestanas ---------- */
+.tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.tabs button {
+  flex: 1; border: none; cursor: pointer; font: inherit; font-weight: 700; font-size: .9rem;
+  padding: 10px 4px; border-radius: 12px; background: rgba(255, 255, 255, .1); color: #fff;
+}
+.tabs button.on { background: var(--accent); color: #3a2a00; }
+
+/* ---------- lista de casos ---------- */
+.casos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.casos button {
+  display: flex; align-items: center; gap: 10px; border: none; cursor: pointer;
+  font: inherit; text-align: left; padding: 9px; border-radius: 14px;
+  background: rgba(255, 255, 255, .09); color: #fff;
+}
+.casos button:active { transform: scale(.97); }
+.casos b { display: block; font-size: .92rem; }
+.casos em { font-style: normal; font-size: .7rem; color: #bfb0d6; }
+
+/* ---------- lecciones ---------- */
+.leccion {
+  display: flex; align-items: center; gap: 12px; width: 100%; border: none; cursor: pointer;
+  font: inherit; text-align: left; padding: 12px 14px; border-radius: 16px; margin-bottom: 8px;
+  background: var(--card); color: var(--ink); box-shadow: var(--shadow);
+}
+.leccion:active { transform: scale(.985); }
+.leccion .n {
+  width: 38px; height: 38px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  background: #efe9f7; font-weight: 800; font-size: 1.15rem;
+}
+.leccion.hecha .n { background: var(--ok); }
+.leccion .txt { flex: 1; }
+.leccion b { display: block; font-size: 1rem; }
+.leccion em { font-style: normal; font-size: .78rem; color: var(--muted); }
+.leccion .barra { height: 5px; border-radius: 99px; background: #efe9f7; margin-top: 5px; }
+.leccion .barra i { display: block; height: 100%; border-radius: 99px; background: var(--ok); }
+
+#les-texto p { margin: .5em 0; font-size: .94rem; line-height: 1.5; color: #3c2b56; }
+#les-truco { background: #fff7dc; border-radius: 12px; padding: 9px 11px; font-size: .87rem; }
+
+/* ---------- gestor de algoritmos ---------- */
+.algos-cab {
+  display: flex; align-items: baseline; gap: 8px; margin: 14px 0 6px; font-size: .95rem;
+}
+.algos-cab span { font-size: .76rem; color: #bfb0d6; }
+.algos { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.algos .fila {
+  display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 12px;
+  background: rgba(255, 255, 255, .07); cursor: pointer;
+}
+.algos .fila.sel { background: rgba(255, 217, 61, .2); outline: 2px solid var(--accent); }
+.algos .fila .tick { width: 20px; flex: none; text-align: center; }
+.algos .fila code {
+  flex: 1; font-size: .82rem; letter-spacing: .3px; word-spacing: 2px; font-family: inherit;
+  font-weight: 700;
+}
+.algos .fila .etq { font-size: .66rem; color: #bfb0d6; flex: none; }
+.algos .fila .del {
+  border: none; background: none; color: #ff9a9a; cursor: pointer; font-size: .95rem; flex: none;
+}
+.tabs button em { font-style: normal; display: block; font-size: .62rem; opacity: .75; }
+
+.grupo-cab {
+  grid-column: 1 / -1; font-size: .78rem; font-weight: 800; color: var(--accent);
+  text-transform: uppercase; letter-spacing: .6px; margin: 10px 0 2px;
+}
+.casos button.hecho { outline: 1px solid rgba(107, 203, 119, .5); }
+.grabando { animation: latido 1s ease-in-out infinite; }
+@keyframes latido { 50% { opacity: .45; } }
+
+/* ---------- cronometro: inspeccion ---------- */
+.timer-big.inspeccion { color: var(--accent); }
+.timer-big.aviso { color: var(--warn); }
+.timer-big.penal { color: #ff7b7b; }
+#tm-scene { pointer-events: none; }
+.tm-marca {
+  display: flex; gap: 6px; justify-content: center; margin: -4px 0 6px;
+}
+.tm-marca i {
+  width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, .18);
+}
+.tm-marca i.on { background: var(--accent); }
+
+/* la guía en vivo, mientras sigues una fórmula */
+#fr-move:not(:empty) { margin: 10px 0 2px; }
+.formula span.hecho { opacity: .3; text-decoration: line-through; }
+.instr .siguiendo {
+  display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: .5px;
+  background: var(--ok); color: #fff; border-radius: 99px; padding: 2px 9px; margin-bottom: 4px;
+}
+
+/* ---------- cronometro: guia de la mezcla ---------- */
+#tm-move:not(:empty) {
+  margin: 4px 0 8px; background: var(--card); color: var(--ink);
+  border-radius: 18px; padding: 10px 14px; box-shadow: var(--shadow);
+}
+.scramble span.hecho { opacity: .28; text-decoration: line-through; }
+.scramble span.now {
+  background: #fff; color: #1c1030 !important; border-radius: 7px;
+  padding: 1px 5px; font-weight: 800;
+}
+.scramble.error { outline: 2px solid #ff7b7b; }
