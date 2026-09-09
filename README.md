@@ -375,3 +375,22 @@ test/, dev/       pruebas y utilidades de desarrollo
 
 Desde la consola del navegador hay un manejador para trastear:
 `cubo.app`, `cubo.doMove('R', 1)`, `cubo.fakeMove('U', 1)` (simula un giro del cubo físico).
+
+---
+
+## Licencia
+
+[MIT](LICENSE). Puedes usarlo, copiarlo, modificarlo y distribuirlo, también con fines
+comerciales; lo único que hay que conservar es el aviso de copyright y la licencia.
+
+## Créditos
+
+Dos piezas vienen de trabajo ajeno y están marcadas como tal en el código:
+
+- El **decodificador del estado del cubo** (`js/xiaomi.js`) es un port del que usa la app
+  oficial, tomado de [wachino/xiaomi-mi-smart-rubik-cube](https://github.com/wachino/xiaomi-mi-smart-rubik-cube).
+- Los **57 algoritmos de OLL** salen del conjunto estándar de
+  [Roman-/oll_trainer](https://github.com/Roman-/oll_trainer), descargados y verificados
+  uno a uno por `dev/build_oll.js`.
+
+El resto —modelo del cubo, solucionador, entrenadores, interfaz y pruebas— es propio.
