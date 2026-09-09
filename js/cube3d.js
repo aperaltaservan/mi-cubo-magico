@@ -17,6 +17,11 @@ const CSS_ROT = {
 
 const AXIS = { U: [1, 1], D: [1, -1], R: [0, 1], L: [0, -1], F: [2, 1], B: [2, -1] };
 
+// El color de una pegatina apagada. No es negro puro: sobre el fondo
+// oscuro de la app un negro absoluto se come los bordes y el cubo deja
+// de leerse como un cubo.
+export const APAGADO = '#17111f';
+
 // Angulos de camara para que se vea bien cada cara
 export const VIEWS = {
   F: [-24, -34], R: [-24, -124], B: [-24, -214], L: [-24, -304],
@@ -47,6 +52,7 @@ export class Cube3D {
     this.rotX = VIEWS.F[0];
     this.rotY = VIEWS.F[1];
     this.animating = false;
+    this.apagar = null;       // funcion estado -> pegatinas que van apagadas
     this._build();
     this._enableDrag();
   }
@@ -144,12 +150,28 @@ export class Cube3D {
 
   setColors(colors) { this.colors = colors; }
 
+  /**
+   * Apaga unas pegatinas al pintar. Se pasa una FUNCION del estado, no una
+   * lista: las piezas se mueven, asi que lo que hay que apagar cambia en
+   * cada giro y se tiene que recalcular solo.
+   * @param {?function(string[]): number[]} fn
+   */
+  setApagado(fn) {
+    const nueva = fn || null;
+    if (nueva === this.apagar) return;     // sin cambios no hay nada que repintar
+    this.apagar = nueva;
+    if (this.state) this.render(this.state);
+  }
+
   /** Pinta el estado (array de 54 letras de cara) */
   render(state) {
     this.state = state.slice();
+    const apagadas = this.apagar ? new Set(this.apagar(state)) : null;
     for (let i = 0; i < 54; i++) {
-      this.stickerEls[i].style.background = this.colors[state[i]] || '#333';
+      const off = !!(apagadas && apagadas.has(i));
+      this.stickerEls[i].style.background = off ? APAGADO : (this.colors[state[i]] || '#333');
       this.stickerEls[i].classList.add('painted');
+      this.stickerEls[i].classList.toggle('apagada', off);
     }
   }
 
@@ -226,4 +248,52 @@ export function netHTML(state, colors, px = 6) {
   }
   return `<div class="net" style="grid-template-columns:repeat(12,${px}px);`
     + `grid-template-rows:repeat(9,${px}px)">${celdas.join('')}</div>`;
+}
+
+// Rejilla isométrica de 4x4x4 vértices: i hacia la derecha, j hacia abajo,
+// k hacia delante, cada uno de 0 a 3. Cada pegatina son cuatro de esos puntos.
+const KX = Math.cos(Math.PI / 6);          // el ancho de media celda
+
+function isoPunto(i, j, k, px) {
+  return [(3 + i - k) * KX * px, ((i + k) * 0.5 + j) * px];
+}
+
+/**
+ * Miniatura del cubo en perspectiva: se ven la cara de arriba, la de
+ * delante y la de la derecha. Es justo donde pasa todo —el hueco de F2L
+ * está entre delante y derecha, y OLL y PLL viven arriba—, así que con
+ * esas tres caras se reconoce el caso de un vistazo.
+ *
+ * Se dibuja del estado, igual que el cubo 3D, así que no hay dibujos a
+ * mano que puedan mentir: enseña exactamente el caso que vas a entrenar.
+ */
+export function isoCubeSVG(state, colors, opts = {}) {
+  const px = opts.px || 12;
+  const apagadas = opts.apagadas ? new Set(opts.apagadas) : null;
+  const W = 6 * KX * px;
+  const H = 6 * px;
+  const borde = Math.max(0.8, px * 0.09);
+  const partes = [];
+  const cara = (idx, pts) => {
+    const color = apagadas && apagadas.has(idx) ? APAGADO : (colors[state[idx]] || '#333');
+    const puntos = pts.map(([i, j, k]) =>
+      isoPunto(i, j, k, px).map((n) => n.toFixed(2)).join(',')).join(' ');
+    partes.push(`<polygon points="${puntos}" fill="${color}"/>`);
+  };
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      // arriba (U): fila 0 es la de atrás, columna 0 la de la izquierda
+      cara(r * 3 + c, [[c, 0, r], [c + 1, 0, r], [c + 1, 0, r + 1], [c, 0, r + 1]]);
+      // derecha (R): su columna 0 es la de delante, o sea k = 2 - c
+      cara(9 + r * 3 + c,
+        [[3, r, 3 - c], [3, r, 2 - c], [3, r + 1, 2 - c], [3, r + 1, 3 - c]]);
+      // delante (F)
+      cara(18 + r * 3 + c, [[c, r, 3], [c + 1, r, 3], [c + 1, r + 1, 3], [c, r + 1, 3]]);
+    }
+  }
+  return `<svg class="iso" viewBox="${-borde} ${-borde} ${W + borde * 2} ${H + borde * 2}"`
+    + ` width="${(W + borde * 2).toFixed(1)}" height="${(H + borde * 2).toFixed(1)}"`
+    + ' aria-hidden="true">'
+    + `<g stroke="#120c1a" stroke-width="${borde * 2}" stroke-linejoin="round">`
+    + partes.join('') + '</g></svg>';
 }

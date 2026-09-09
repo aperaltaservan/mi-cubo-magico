@@ -9,7 +9,9 @@ import {
 import {
   SETS, recognise, setupFor, OLL_DONE, F2L_DONE, CROSS_DONE,
   solutionFrom, pairSlotDone, restoDone, resuelveElCaso, mapearAlg,
+  estadoDelCaso, pegatinasUltimaCapa,
 } from './algs.js';
+import { isoCubeSVG } from './cube3d.js';
 import { solve } from './solver.js';
 import * as mis from './myalgs.js';
 import { LESSONS, lessonById, nextLesson } from './lessons.js';
@@ -47,6 +49,9 @@ export function onScreen(name) {
     renderTimer();
   }
   if (name === 'fridrich') { soltarGuia(); renderFridrich(); }
+  // al cambiar de idioma se vuelve a entrar en la pantalla de siempre; el
+  // entrenador escribe sus textos desde el codigo, asi que hay que repintarlo
+  if (name === 'drill' && drill.caso) renderDrill();
   if (name !== 'timer') timerReset();
 }
 
@@ -613,8 +618,38 @@ function statsDe(kind, id) {
   return casoStats[kind + ':' + id] || { intentos: 0, mejor: null, ultimos: [] };
 }
 
+// --- apagar la ultima capa (solo en F2L) -------------------------------
+//  Entrenando F2L la ultima capa es ruido: son piezas que vas a mover
+//  luego de todas formas. Apagadas, lo unico que se ve de colores es el
+//  par que vas a meter, que es lo que hay que aprender a mirar. Se apaga
+//  la PIEZA entera, asi que un hueco con una esquina de arriba dentro se
+//  ve negro: justo lo que significa, que ese hueco esta libre.
+const CLAVE_NEGRAS = 'cubo-magico-f2l-negras';
+let negras = false;
+
+function cargarNegras() {
+  try { negras = localStorage.getItem(CLAVE_NEGRAS) === '1'; } catch (e) { negras = false; }
+}
+function alternarNegras() {
+  negras = !negras;
+  try { localStorage.setItem(CLAVE_NEGRAS, negras ? '1' : '0'); } catch (e) { /* nada */ }
+}
+/** Texto del boton: dice lo que va a hacer, como el de grabar */
+function pintarBotonNegras(id, visible) {
+  const b = $(id);
+  b.style.display = visible ? '' : 'none';
+  if (!visible) return;
+  b.innerHTML = t(negras ? '🌈 Encender la última capa' : '🌑 Apagar la última capa');
+  b.title = t('Deja a la vista sólo el par que vas a meter');
+}
+/** Las pegatinas que van apagadas en un caso de F2L, o ninguna */
+function apagadasDe(kind, state) {
+  return kind === 'F2L' && negras ? pegatinasUltimaCapa(state) : null;
+}
+
 function initFridrich() {
   cargarCasos();
+  cargarNegras();
   $$('#fr-tabs button').forEach((b) => {
     b.onclick = () => {
       ctx.fx.click();
@@ -627,6 +662,20 @@ function initFridrich() {
   $('#dr-auto').onclick = () => { ctx.fx.click(); ctx.setState(applyAlg(solvedState(), drill.setup)); };
   $('#dr-grabar').onclick = () => { ctx.fx.click(); alternarGrabacion(); };
   $('#dr-escribir').onclick = () => { ctx.fx.click(); escribirAlgoritmo(); };
+  $('#dr-negras').onclick = () => {
+    ctx.fx.click();
+    alternarNegras();
+    escenaDrill();            // setApagado repinta solo con lo que ya hubiera
+    renderDrill();
+  };
+  $('#fr-negras').onclick = () => { ctx.fx.click(); alternarNegras(); renderFridrich(); };
+}
+
+/** La escena del entrenador, con la última capa apagada si toca */
+function escenaDrill() {
+  const sc = escena('dr-scene');
+  sc.setApagado(drill.kind === 'F2L' && negras ? pegatinasUltimaCapa : null);
+  return sc;
 }
 
 function renderFridrich() {
@@ -641,6 +690,8 @@ function renderFridrich() {
   const hechos = set.casos.filter((c) => statsDe(pestana, c.id).intentos > 0).length;
   $('#fr-resumen').textContent = t('{n} casos de {set} · {hechos} practicados',
     { n: set.casos.length, set: set.nombre, hechos });
+  pintarBotonNegras('#fr-negras', pestana === 'F2L');
+  const colores = ctx.hexMap();
   const box = $('#fr-lista');
   box.innerHTML = '';
   for (const grupo of set.grupos) {
@@ -656,9 +707,14 @@ function renderFridrich() {
       if (st.intentos) b.classList.add('hecho');
       const veces = st.intentos === 1 ? t('1 intento')
         : t('{n} intentos', { n: st.intentos });
-      b.innerHTML = `<div><b>${t(c.name)}</b><em>${st.intentos
-        ? t('mejor {tiempo} · {veces}', { tiempo: S.formatTime(st.mejor), veces })
-        : t('{n} algoritmos', { n: mis.algsDe(pestana, c).length })}</em></div>`;
+      // la miniatura se dibuja del estado en el que se ve el caso, asi que
+      // no puede mentir: es exactamente lo que te vas a encontrar
+      const estado = estadoDelCaso(c);
+      b.innerHTML = isoCubeSVG(estado, colores,
+        { px: 7, apagadas: apagadasDe(pestana, estado) })
+        + `<div><b>${t(c.name)}</b><em>${st.intentos
+          ? t('mejor {tiempo} · {veces}', { tiempo: S.formatTime(st.mejor), veces })
+          : t('{n} algoritmos', { n: mis.algsDe(pestana, c).length })}</em></div>`;
       b.onclick = () => { ctx.fx.click(); abrirDrill(pestana, c); };
       box.appendChild(b);
     }
@@ -815,7 +871,7 @@ function abrirDrill(kind, caso) {
   $('#dr-titulo').textContent = kind + ' · ' + t(caso.name);
   ctx.go('drill');
   renderDrill();
-  escena('dr-scene').render(drill.objetivo);
+  escenaDrill().render(drill.objetivo);
 }
 
 function nuevoDrill(kind) {
@@ -839,6 +895,7 @@ function renderDrill() {
     + celda('mejor', st.mejor ? S.formatTime(st.mejor) : '—')
     + celda('media 5', media);
   $('#dr-auto').style.display = ctx.app.mode === 'state' ? 'none' : '';
+  pintarBotonNegras('#dr-negras', drill.kind === 'F2L');
   renderAlgos();
 
   if (drill.grabando) {
@@ -987,7 +1044,7 @@ function terminarGrabacion(automatico) {
 }
 
 function drillOnState(state) {
-  const sc = escena('dr-scene');
+  const sc = escenaDrill();
   if (!sc.animating) sc.render(state);
 
   if (drill.fase === 'preparar') {

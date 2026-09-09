@@ -643,6 +643,12 @@ export const EN = {
   'U (cabeza de toro)': 'U (bull’s head)',
   'L (diagonal)': 'L (diagonal)',
 
+  // ---------- apagar la última capa ----------
+  '🌑 Apagar la última capa': '🌑 Turn the last layer off',
+  '🌈 Encender la última capa': '🌈 Turn the last layer back on',
+  'Deja a la vista sólo el par que vas a meter':
+    'Leaves only the pair you are about to insert in sight',
+
   // ---------- Entrenar un caso ----------
   'Caso': 'Case',
   'Otro caso': 'Another case',

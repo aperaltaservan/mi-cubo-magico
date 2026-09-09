@@ -86,6 +86,18 @@ for (const f of FACES) MOVE_PERM[f] = buildMove(f);
 // Coordenada 3D de cada pegatina (la usa el render 3D)
 export function stickerGeometry(i) { return { pos: POS[i], normal: NRM[i] }; }
 
+// Las pegatinas del mismo cubito comparten posicion. Agrupadas asi se puede
+// hablar de piezas enteras (apagar una, resaltarla) sin listas escritas a mano.
+const CUBIE = new Map();
+POS.forEach((p, i) => {
+  const k = p.join(',');
+  if (!CUBIE.has(k)) CUBIE.set(k, []);
+  CUBIE.get(k).push(i);
+});
+
+/** Todos los cubitos, cada uno con sus pegatinas (1, 2 o 3) */
+export function cubies() { return [...CUBIE.values()]; }
+
 // --- Giros del cubo entero ---------------------------------------------
 // Un "mapa de caras" dice a que posicion va cada cara: {F:'L', ...} significa
 // que la cara que estaba delante pasa a estar a la izquierda.

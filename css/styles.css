@@ -56,6 +56,8 @@ p.lead { text-align: center; color: #cbbde0; margin: 0 0 18px; font-size: 1.02re
   background: rgba(255, 255, 255, .1); color: #fff; box-shadow: none;
   border: 2px solid rgba(255, 255, 255, .22); font-size: 1rem; padding: 13px;
 }
+/* un interruptor pequeno, para lo que no es la accion principal */
+.btn.mini { font-size: .86rem; padding: 8px 12px; margin-bottom: 10px; }
 .btn .emoji { font-size: 1.6rem; }
 .btn small { display: block; font-weight: 500; font-size: .82rem; color: var(--muted); }
 
@@ -98,6 +100,8 @@ p.lead { text-align: center; color: #cbbde0; margin: 0 0 18px; font-size: 1.02re
   box-shadow: inset 0 0 12px rgba(0, 0, 0, .35);
 }
 .cubie-face.painted { box-shadow: inset 0 -6px 12px rgba(0, 0, 0, .22); }
+/* pegatina apagada: la ultima capa mientras entrenas F2L */
+.cubie-face.apagada { box-shadow: inset 0 0 14px rgba(0, 0, 0, .55); }
 .cubie-face.hi {
   outline: 4px solid #fff; outline-offset: -5px;
   animation: pulse .9s ease-in-out infinite alternate;
@@ -260,13 +264,17 @@ p.lead { text-align: center; color: #cbbde0; margin: 0 0 18px; font-size: 1.02re
 /* ---------- lista de casos ---------- */
 .casos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .casos button {
-  display: flex; align-items: center; gap: 10px; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; border: none; cursor: pointer;
   font: inherit; text-align: left; padding: 9px; border-radius: 14px;
   background: rgba(255, 255, 255, .09); color: #fff;
 }
 .casos button:active { transform: scale(.97); }
-.casos b { display: block; font-size: .92rem; }
+.casos button > div { flex: 1; min-width: 0; }
+.casos b { display: block; font-size: .88rem; line-height: 1.2; }
 .casos em { font-style: normal; font-size: .7rem; color: #bfb0d6; }
+/* miniatura del caso: se dibuja del estado, no es un dibujo guardado */
+.casos .iso { flex: none; width: 33px; height: auto; }
+@media (min-width: 420px) { .casos .iso { width: 40px; } }
 
 /* ---------- lecciones ---------- */
 .leccion {

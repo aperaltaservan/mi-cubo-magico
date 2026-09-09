@@ -72,7 +72,7 @@ export function allCases() {
 import {
   CORNERS, EDGES, edgeSolved, cornerSolved, isSolved, findCorner, findEdge,
   applyAlg, applyMove, invertAlg, expandAlg, solvedState, simplifyAlg,
-  rotateFrame, findRotation,
+  rotateFrame, findRotation, cubies,
 } from './cube.js';
 
 const SIDES = ['F', 'R', 'B', 'L'];
@@ -353,6 +353,23 @@ const EXTRACCIONES = [
 ];
 
 const PAR = { esquina: 'DFR', arista: 'FR' };
+
+/**
+ * Las pegatinas de las piezas de la ultima capa: las que llevan el color
+ * de arriba, mas el centro de arriba. Apagandolas en el entrenador de F2L
+ * queda a la vista solo el par que hay que meter.
+ *
+ * Se buscan por la PIEZA, no por donde este: una esquina amarilla metida
+ * en el hueco tambien es de la ultima capa, y verla apagada es justo lo
+ * que dice que ese hueco esta libre.
+ */
+export function pegatinasUltimaCapa(s) {
+  const out = [];
+  for (const pieza of cubies()) {
+    if (pieza.some((i) => s[i] === 'U')) out.push(...pieza);
+  }
+  return out;
+}
 
 /** El hueco de delante-derecha esta hecho y el resto tambien (salvo arriba) */
 export function pairSlotDone(s) {

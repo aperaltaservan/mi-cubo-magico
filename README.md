@@ -222,6 +222,11 @@ Toca el nombre del caso y saltas a entrenarlo aparte.
 | **OLL** | 57 | la forma del amarillo (punto, rayo, pez, cruz…) |
 | **PLL** | 21 | bordes, esquinas, adyacentes, diagonales, ciclos |
 
+Cada caso de la lista lleva **su miniatura**: el cubo en perspectiva, con la cara de
+arriba, la de delante y la de la derecha, que es donde pasa todo. No son dibujos
+guardados, se calculan del estado del caso igual que el cubo grande, así que **enseñan
+exactamente lo que te vas a encontrar** y no pueden quedarse desfasadas.
+
 Toca un caso y la app te da **la mezcla que lo prepara**. Cuando tu cubo llega a ese caso
 te avisa, cronometra, y **te guía movimiento a movimiento con el giro de ajuste incluido**
 (marcado con `*`): un algoritmo sólo funciona si antes colocas la cara de arriba, y ese
@@ -229,6 +234,19 @@ giro depende de cómo haya caído la mezcla.
 
 Guarda **el mejor tiempo y la media de tus últimos 5 intentos por caso**, para que veas
 cuáles llevas flojos. Sin cubo conectado, un botón prepara el caso en la pantalla.
+
+### 🌑 Apagar la última capa (sólo en F2L)
+
+Entrenando F2L, la última capa es ruido: son piezas que vas a mover luego de todas
+formas, y con tanto color cuesta ver lo único que importa, **el par que vas a meter**.
+
+El botón **🌑 Apagar la última capa** las pone en negro. Está en la lista de casos y en
+el entrenador, se acuerda de cómo lo dejaste, y **es opcional**: si prefieres el cubo a
+todo color, no lo toques.
+
+Se apaga **la pieza**, no la posición. Así que una esquina de arriba metida en el hueco
+se ve negra también, que es justo lo que significa: ese hueco está libre. Y al girar, el
+negro viaja con las piezas, porque se recalcula en cada giro del cubo.
 
 ### Tus propios algoritmos
 
@@ -412,6 +430,16 @@ que orientan la última y que **cada uno es un caso distinto**. Los 57 cubren la
 orientaciones posibles de la última capa (57 casos + el resuelto): el conjunto completo,
 comprobado por cálculo, no por confianza.
 
+**Las miniaturas y el apagado también se calculan.** La miniatura es un SVG en
+perspectiva isométrica que se dibuja del estado (`isoCubeSVG` en `js/cube3d.js`), y las
+piezas que se apagan salen de buscar cuáles llevan el color de arriba
+(`pegatinasUltimaCapa` en `js/algs.js`), agrupando las pegatinas por cubito a partir de
+sus coordenadas 3D. No hay ni una lista escrita a mano, así que `test/casos.js` puede
+comprobar de verdad lo que se ve: que se apagan las 21 pegatinas de arriba y sólo esas,
+que **nunca se apaga media pieza**, que el par de F2L no se apaga jamás, que apagada la
+última capa **no queda ni un amarillo a la vista**, y que las 119 miniaturas salen
+distintas entre sí y ninguna se parece al cubo resuelto.
+
 Los **41 casos de F2L** no se copian de ninguna tabla: `dev/build_f2l.js` recorre en
 anchura todas las formas de sacar el par del hueco con secuencias que no tocan el resto
 del cubo. Cada caso se alcanza por un camino conocido, así que **su solución es ese camino
@@ -479,7 +507,7 @@ js/solver.js      método principiante por capas
 js/giiker.js      Bluetooth: conexión y paquetes
 js/xiaomi.js      lectura del estado real del cubo
 js/calibrate.js   modo de reserva: aprender el cubo a mano
-js/cube3d.js      cubo 3D con transformaciones CSS, sin librerías
+js/cube3d.js      cubo 3D con transformaciones CSS y miniaturas, sin librerías
 js/fx.js          voz, sonidos y confeti
 js/algs.js        los tres conjuntos y el reconocimiento de casos
 js/oll.js         los 57 OLL      (generado, no editar a mano)

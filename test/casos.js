@@ -1,6 +1,7 @@
 // Los 119 casos entrenables: mezcla, reconocimiento y solución literal.
 import * as C from '../js/cube.js';
 import * as A from '../js/algs.js';
+import { isoCubeSVG, APAGADO } from '../js/cube3d.js';
 
 let ok = 0, bad = 0;
 const t = (n, c, x) => { if (c) ok++; else { bad++; console.log('FALLO: ' + n + (x !== undefined ? '  ' + x : '')); } };
@@ -158,6 +159,69 @@ console.log('--- la guía en vivo, de la cruz al final ---');
   t('la guía pasa por los cuatro pasos',
     ['cruz', 'F2L', 'OLL', 'PLL'].every((p) => pasos.has(p)), [...pasos].join(' '));
   console.log('  máximo de movimientos guiados: ' + maxN);
+}
+
+console.log('--- apagar la última capa (entrenador de F2L) ---');
+{
+  let malas = 0, aMedias = 0, delPar = 0;
+  for (const kind of ['F2L', 'OLL', 'PLL']) {
+    for (const caso of A.SETS[kind].casos) {
+      const st = A.estadoDelCaso(caso);
+      const off = new Set(A.pegatinasUltimaCapa(st));
+      // 4 esquinas (3 pegatinas) + 4 aristas (2) + el centro de arriba
+      if (off.size !== 21) malas++;
+      // se apaga la pieza entera o nada: media pieza apagada no se entiende
+      for (const pieza of C.cubies()) {
+        const dentro = pieza.filter((i) => off.has(i)).length;
+        if (dentro && dentro !== pieza.length) aMedias++;
+      }
+      // y nunca el par que hay que meter, que es justo lo que se quiere ver
+      const esq = C.findCorner(st, 'D', 'F', 'R');
+      const ari = C.findEdge(st, 'F', 'R');
+      if (C.CORNERS[esq.name].some((i) => off.has(i))) delPar++;
+      if (C.EDGES[ari.name].some((i) => off.has(i))) delPar++;
+    }
+  }
+  t('119 casos: se apagan las 21 pegatinas de arriba', malas === 0, malas + ' mal');
+  t('se apaga la pieza entera, nunca media', aMedias === 0, aMedias + ' a medias');
+  t('el par de F2L nunca se apaga', delPar === 0, delPar + ' veces');
+
+  // apagarlas y volver a mirar: el color de arriba tiene que desaparecer
+  // del dibujo, porque solo lo llevan piezas de la ultima capa
+  const colores = { U: '#f1c40f', R: '#e67e22', F: '#27ae60', D: '#ecf0f1', L: '#c0392b', B: '#2980b9' };
+  let conAmarillo = 0;
+  for (const caso of A.SETS.F2L.casos) {
+    const st = A.estadoDelCaso(caso);
+    const svg = isoCubeSVG(st, colores, { px: 8, apagadas: A.pegatinasUltimaCapa(st) });
+    if (svg.includes(colores.U)) conAmarillo++;
+  }
+  t('con la última capa apagada no queda ni un amarillo', conAmarillo === 0, conAmarillo + ' casos');
+}
+
+console.log('--- la miniatura del caso ---');
+{
+  let malas = 0, sinApagar = 0;
+  const colores = { U: '#f1c40f', R: '#e67e22', F: '#27ae60', D: '#ecf0f1', L: '#c0392b', B: '#2980b9' };
+  const vistas = new Map();
+  for (const kind of ['F2L', 'OLL', 'PLL']) {
+    for (const caso of A.SETS[kind].casos) {
+      const svg = isoCubeSVG(A.estadoDelCaso(caso), colores, { px: 8 });
+      // tres caras de nueve pegatinas, y ninguna coordenada rota
+      if ((svg.match(/<polygon/g) || []).length !== 27) { malas++; continue; }
+      if (/NaN|undefined/.test(svg)) { malas++; continue; }
+      if (svg.includes(APAGADO)) sinApagar++;      // sin pedirlo, no se apaga nada
+      const clave = kind + ':' + svg;
+      vistas.set(clave, (vistas.get(clave) || 0) + 1);
+    }
+  }
+  t('119 miniaturas con sus 27 pegatinas', malas === 0, malas + ' mal dibujadas');
+  t('sin pedirlo, no se apaga nada', sinApagar === 0, sinApagar + ' apagadas de más');
+  // la del cubo resuelto no puede parecerse a ningun caso: si un caso se
+  // dibujara igual, la miniatura no estaria diciendo nada
+  const resuelta = isoCubeSVG(C.solvedState(), colores, { px: 8 });
+  const iguales = [...vistas.keys()].filter((k) => k.endsWith(resuelta)).length;
+  t('ninguna miniatura sale como el cubo resuelto', iguales === 0, iguales + ' iguales');
+  console.log('  miniaturas distintas: ' + vistas.size + ' de 119');
 }
 
 console.log('');
