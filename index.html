@@ -7,6 +7,14 @@
 <title>Mi Cubo Mágico</title>
 <link rel="stylesheet" href="css/styles.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>">
+<link rel="manifest" href="manifest.webmanifest">
+<!-- iOS no mira el manifiesto: el icono y el nombre de la pantalla de
+     inicio salen de aquí, y el icono tiene que ser PNG. -->
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cubo Mágico">
 </head>
 <body>
 <div id="app">
@@ -30,9 +38,29 @@
     </button>
 
     <button class="btn ghost" id="btn-scan" data-i18n>🔍 No sale mi cubo en la lista</button>
+    <button class="btn ghost hidden" id="btn-instalar" data-i18n>📲 Añadir a la pantalla de inicio</button>
 
     <div class="spacer"></div>
     <p class="note" id="home-note"></p>
+  </section>
+
+  <!-- ============ INSTALAR ============ -->
+  <section id="screen-instalar" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="home">←</button>
+      <div class="title" data-i18n>Añadir a la pantalla de inicio</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="big-emoji">📲</div>
+    <p class="note" data-i18n>
+      Queda como una app más: con su icono, a pantalla completa y sin la barra
+      del navegador. Sigue siendo la misma página, así que no ocupa casi nada.
+    </p>
+    <div class="instr" style="text-align:left">
+      <div id="instalar-pasos"></div>
+    </div>
+    <p class="note" id="instalar-nota"></p>
+    <div class="spacer"></div>
   </section>
 
   <!-- ============ AYUDA BLUETOOTH ============ -->

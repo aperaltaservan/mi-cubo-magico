@@ -122,6 +122,7 @@ function go(name) {
   if (name === 'levels') buildLevels();
   if (name === 'patrones') buildPatrones();
   if (name === 'diag') refreshDiag();
+  if (name === 'instalar') pintarInstalacion();
   padEn(name === 'play' || name === 'drill' ? name : null);
   sections.onScreen(name);
 }
@@ -1433,6 +1434,87 @@ function refreshDiag() {
 }
 
 // ------------------------------------------------------------
+//  Añadir a la pantalla de inicio
+// ------------------------------------------------------------
+//  Cuando el navegador quiere, avisa de que la app se puede instalar
+//  y nos deja guardar ese aviso para sacarlo al pulsar el botón. Pero
+//  no siempre avisa: Chrome ya no exige un service worker para dejar
+//  instalar desde su menú, pero sí lo sigue mirando para lanzar ese
+//  aviso. Y en iOS no existe nada parecido: Safari sólo lo ofrece por
+//  su menú de compartir.
+//
+//  Por eso el botón se enseña siempre que la app no esté ya instalada,
+//  y al pulsarlo hace lo mejor que pueda: si el navegador nos dio su
+//  aviso, lo lanza; si no, explica dónde está la opción. Así no depende
+//  de una condición que cambia con cada versión de cada navegador.
+
+let avisoInstalar = null;
+
+/** ¿Ya está instalada, o sea, abierta desde la pantalla de inicio? */
+function yaInstalada() {
+  return window.matchMedia('(display-mode: standalone)').matches
+    || navigator.standalone === true;
+}
+
+function prepararInstalacion() {
+  const boton = $('#btn-instalar');
+
+  const mostrar = (si) => boton.classList.toggle('hidden', !si);
+  mostrar(!yaInstalada());
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();          // el navegador no lo saca por su cuenta
+    avisoInstalar = e;           // lo sacamos nosotros al pulsar el botón
+    mostrar(!yaInstalada());
+  });
+
+  window.addEventListener('appinstalled', () => {
+    avisoInstalar = null;
+    mostrar(false);
+    toast(t('¡Instalada! Búscala en tu pantalla de inicio.'), 3000);
+  });
+
+  boton.onclick = async () => {
+    fx.click();
+    if (avisoInstalar) {
+      avisoInstalar.prompt();
+      const { outcome } = await avisoInstalar.userChoice;
+      avisoInstalar = null;
+      if (outcome === 'accepted') mostrar(false);
+      return;
+    }
+    go('instalar');
+  };
+}
+
+/** Las instrucciones, que cambian según dónde estés */
+function pintarInstalacion() {
+  const paso = (n, texto) => '<p><b>' + n + '.</b> ' + texto + '</p>';
+  const caja = $('#instalar-pasos');
+
+  if (yaInstalada()) {
+    caja.innerHTML = '<p>' + t('Ya la tienes instalada: estás usándola así ahora mismo.') + '</p>';
+    $('#instalar-nota').textContent = '';
+    return;
+  }
+
+  if (enIOS()) {
+    caja.innerHTML = paso(1, t('Toca <b>Compartir</b> en la barra de Safari '
+      + '(el cuadrado con la flecha hacia arriba).'))
+      + paso(2, t('Baja y elige <b>Añadir a inicio</b>.'))
+      + paso(3, t('Dale a <b>Añadir</b>. Ya la tienes con las demás apps.'));
+    $('#instalar-nota').innerHTML = t('Tiene que ser <b>Safari</b>: desde Chrome o '
+      + 'Firefox en iPhone esta opción no aparece.');
+    return;
+  }
+
+  caja.innerHTML = paso(1, t('Abre el menú del navegador (los tres puntos).'))
+    + paso(2, t('Elige <b>Instalar</b> o <b>Añadir a la pantalla de inicio</b>.'));
+  $('#instalar-nota').innerHTML = t('En Chrome y Edge suele salir también un icono '
+    + 'de instalar en la barra de direcciones.');
+}
+
+// ------------------------------------------------------------
 //  Idioma
 // ------------------------------------------------------------
 //  El texto estatico lo repinta traducirDOM; lo que dibuja el
@@ -1593,6 +1675,8 @@ function boot() {
       + '<code>http://localhost:8080</code> (ejecuta <code>INICIAR.bat</code>), '
       + 'no con doble clic en el archivo.');
   }
+
+  prepararInstalacion();
 
   $('#ios-sincubo').onclick = () => { fx.click(); $('#btn-nocube').click(); };
   $('#ios-url').textContent = location.href.replace(/^https?:\/\//, '');

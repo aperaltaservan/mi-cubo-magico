@@ -284,6 +284,34 @@ pantalla con las dos salidas:
 
 ---
 
+## Instalarla en el móvil
+
+Hay un botón en la portada: **Añadir a la pantalla de inicio**. Queda con su icono, a
+pantalla completa y sin la barra del navegador. Sigue siendo la misma página, así que no
+ocupa nada.
+
+- **Android, Chrome, Edge**: el botón lanza el diálogo de instalar del propio navegador
+  cuando éste nos lo ofrece. Si no lo ofrece, explica dónde está la opción en su menú.
+- **iPhone y iPad**: Safari no tiene ninguna API para esto, así que el botón cuenta los
+  tres pasos (Compartir → Añadir a inicio → Añadir). Tiene que ser Safari: desde Chrome o
+  Firefox en iPhone la opción no aparece.
+
+El botón se enseña siempre que la app no esté ya instalada, y no depende de que el
+navegador haya lanzado su aviso `beforeinstallprompt`. Chrome ya no exige un service
+worker para dejar instalar desde su menú, pero sí lo sigue mirando para lanzar ese aviso,
+así que atarle el botón lo habría dejado invisible en medio Android.
+
+Los iconos no son un PNG bajado de ningún sitio: los dibuja `dev/build_icons.js` píxel a
+píxel (`npm run iconos`), escribiendo el PNG a mano, porque el proyecto no tiene
+dependencias y no las va a tener por unos cuadraditos. Son la cara de un cubo sobre el
+morado de la app, ocupando el 62% del ancho para caber en la zona segura de los iconos
+*maskable* que Android recorta en redondo.
+
+> iOS no mira el manifiesto: el icono y el nombre salen de las etiquetas
+> `apple-touch-icon` y `apple-mobile-web-app-title`, y el icono **tiene que ser PNG**.
+
+---
+
 ## Si algo no va
 
 | Problema | Qué hacer |

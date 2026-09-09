@@ -31,11 +31,10 @@ const PUERTO = 8123 + (process.pid % 400);
 const base = 'http://127.0.0.1:' + PUERTO;
 
 /** Levanta el servidor y espera a que conteste */
-async function arrancar(puerto) {
-  const hijo = spawn(process.execPath, ['server.js'], {
-    env: { ...process.env, PORT: String(puerto), CONTENEDOR: '1' },
-    stdio: 'ignore',
-  });
+async function arrancar(puerto, comoServidor = true) {
+  const env = { ...process.env, PORT: String(puerto) };
+  if (comoServidor) env.CONTENEDOR = '1'; else delete env.CONTENEDOR;
+  const hijo = spawn(process.execPath, ['server.js'], { env, stdio: 'ignore' });
   for (let i = 0; i < 60; i++) {
     try {
       const r = await fetch('http://127.0.0.1:' + puerto + '/health');
@@ -108,6 +107,44 @@ try {
   }
 
   // ------------------------------------------------------------
+  seccion('el manifiesto y los iconos, para instalarla en el móvil');
+  ok(html.includes('rel="manifest"'), 'la portada tiene que enlazar el manifiesto');
+  ok(html.includes('rel="apple-touch-icon"'),
+    'y el icono de iOS, que no mira el manifiesto');
+
+  const man = await fetch(base + '/manifest.webmanifest');
+  ok(man.status === 200, 'el manifiesto tiene que servirse');
+  ok((man.headers.get('content-type') || '').includes('manifest'),
+    'con su tipo, o el navegador lo ignora: ' + man.headers.get('content-type'));
+  const datos = await man.json();
+  for (const campo of ['name', 'short_name', 'start_url', 'display', 'icons']) {
+    ok(datos[campo] !== undefined, 'al manifiesto le falta ' + campo);
+  }
+  ok(datos.display === 'standalone', 'tiene que abrirse sin barra del navegador');
+  ok(datos.start_url === '/', 'start_url va a la raíz, no a una versión concreta');
+  ok(datos.icons.some((i) => i.sizes === '192x192'), 'hace falta el icono de 192');
+  ok(datos.icons.some((i) => i.sizes === '512x512'), 'y el de 512');
+  ok(datos.icons.some((i) => i.purpose === 'maskable'),
+    'y uno maskable, para que Android lo recorte sin comerse el dibujo');
+
+  // los iconos del manifiesto tienen que existir de verdad
+  for (const icono of datos.icons) {
+    const r = await fetch(base + icono.src);
+    ok(r.status === 200, 'el icono ' + icono.src + ' no se sirve');
+    const b = Buffer.from(await r.arrayBuffer());
+    ok(b.subarray(0, 8).toString('hex') === '89504e470d0a1a0a',
+      icono.src + ' tiene que ser un PNG de verdad');
+    const lado = Number(icono.sizes.split('x')[0]);
+    ok(b.readUInt32BE(16) === lado && b.readUInt32BE(20) === lado,
+      icono.src + ' dice ' + icono.sizes + ' pero mide otra cosa');
+  }
+  // y el de iOS, que va por su cuenta
+  const apple = await fetch(base + '/icons/apple-touch-icon.png');
+  ok(apple.status === 200, 'el icono de iOS tiene que servirse');
+  ok(Buffer.from(await apple.arrayBuffer()).readUInt32BE(16) === 180,
+    'el icono de iOS mide 180');
+
+  // ------------------------------------------------------------
   seccion('sólo se sirve la app');
   // fetch() normaliza los '..' antes de enviar, así que para probar de
   // verdad la travesía hay que hablar por el socket a pelo.
@@ -122,6 +159,22 @@ try {
   ok(await pedirCrudo(PUERTO, '/js/app.js') === 200, 'js/app.js sí se sirve');
 } finally {
   hijo.kill();
+}
+
+// ------------------------------------------------------------
+seccion('en local no se promete que nada sea inmutable');
+// Trabajando en el proyecto el código cambia con la dirección igual, y
+// una promesa de inmutable dejaría al navegador con la copia vieja. Es
+// la trampa que tiende el propio versionado a quien lo programa.
+{
+  const local = await arrancar(PUERTO + 2, false);
+  try {
+    const r = await fetch('http://127.0.0.1:' + (PUERTO + 2)
+      + '/v/' + local.salud.version + '/js/app.js');
+    const cc = r.headers.get('cache-control') || '';
+    ok(!/immutable/.test(cc), 'en local no puede ser immutable, y es: ' + cc);
+    ok(/no-cache/.test(cc), 'en local se revalida siempre, y es: ' + cc);
+  } finally { local.hijo.kill(); }
 }
 
 // ------------------------------------------------------------

@@ -949,4 +949,30 @@ export const EN = {
     'Link copied. Open it in Bluefy.',
   'Ya te la he seleccionado: cópiala y ábrela en Bluefy.':
     'I have selected it for you: copy it and open it in Bluefy.',
+
+  // ---------- añadir a la pantalla de inicio ----------
+  '📲 Añadir a la pantalla de inicio':
+    '📲 Add to the home screen',
+  'Añadir a la pantalla de inicio':
+    'Add to the home screen',
+  'Queda como una app más: con su icono, a pantalla completa y sin la barra del navegador. Sigue siendo la misma página, así que no ocupa casi nada.':
+    'It ends up like any other app: its own icon, full screen, no browser bar. It is still the same page, so it takes up next to nothing.',
+  '¡Instalada! Búscala en tu pantalla de inicio.':
+    'Installed! Look for it on your home screen.',
+  'Ya la tienes instalada: estás usándola así ahora mismo.':
+    'You already have it installed: that is how you are using it right now.',
+  'Toca <b>Compartir</b> en la barra de Safari (el cuadrado con la flecha hacia arriba).':
+    'Tap <b>Share</b> in the Safari bar (the square with the arrow pointing up).',
+  'Baja y elige <b>Añadir a inicio</b>.':
+    'Scroll down and choose <b>Add to Home Screen</b>.',
+  'Dale a <b>Añadir</b>. Ya la tienes con las demás apps.':
+    'Tap <b>Add</b>. There it is, alongside your other apps.',
+  'Tiene que ser <b>Safari</b>: desde Chrome o Firefox en iPhone esta opción no aparece.':
+    'It has to be <b>Safari</b>: from Chrome or Firefox on iPhone this option does not appear.',
+  'Abre el menú del navegador (los tres puntos).':
+    'Open the browser menu (the three dots).',
+  'Elige <b>Instalar</b> o <b>Añadir a la pantalla de inicio</b>.':
+    'Choose <b>Install</b> or <b>Add to Home screen</b>.',
+  'En Chrome y Edge suele salir también un icono de instalar en la barra de direcciones.':
+    'In Chrome and Edge there is usually an install icon in the address bar too.',
 };

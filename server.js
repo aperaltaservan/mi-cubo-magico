@@ -54,7 +54,7 @@ const TYPES = {
 /** Calcula una huella corta del contenido de la app */
 async function calcularHuella() {
   const h = createHash('sha1');
-  for (const carpeta of ['js', 'css']) {
+  for (const carpeta of ['js', 'css', 'icons']) {
     let nombres;
     try { nombres = (await readdir(join(ROOT, carpeta))).sort(); }
     catch (e) { continue; }
@@ -67,15 +67,38 @@ async function calcularHuella() {
   return h.digest('hex').slice(0, 12);
 }
 
-const HUELLA = await calcularHuella();
-const PREFIJO = '/v/' + HUELLA;
+// En un servidor la huella se calcula una vez, al arrancar: el código no
+// cambia por debajo. Trabajando en local sí cambia a cada rato, y si se
+// quedara fija el navegador serviría de su caché la copia "immutable" que
+// ya tiene, con la dirección igual y el contenido distinto. Así que fuera
+// del contenedor se recalcula en cada visita a la portada y los recursos
+// no se marcan immutable.
+const EN_SERVIDOR = Boolean(process.env.DOKPLOY || process.env.CONTENEDOR);
+let HUELLA = await calcularHuella();
+const prefijo = () => '/v/' + HUELLA;
 
 /** El index.html, con los recursos apuntando a la versión de ahora */
 async function portada() {
+  if (!EN_SERVIDOR) HUELLA = await calcularHuella();   // en local, al vuelo
+  const p = prefijo();
   const html = await readFile(join(ROOT, 'index.html'), 'utf8');
   return Buffer.from(html
-    .replace('href="css/styles.css"', 'href="' + PREFIJO + '/css/styles.css"')
-    .replace('src="js/app.js"', 'src="' + PREFIJO + '/js/app.js"'), 'utf8');
+    .replace('href="css/styles.css"', 'href="' + p + '/css/styles.css"')
+    .replace('src="js/app.js"', 'src="' + p + '/js/app.js"')
+    .replace('href="manifest.webmanifest"', 'href="' + p + '/manifest.webmanifest"')
+    .replace('href="icons/apple-touch-icon.png"',
+      'href="' + p + '/icons/apple-touch-icon.png"'), 'utf8');
+}
+
+/**
+ * El manifiesto, con sus iconos versionados igual que todo lo demás.
+ * start_url y scope se dejan en la raíz a propósito: es la dirección
+ * que se guarda en la pantalla de inicio y tiene que seguir valiendo
+ * cuando la versión cambie.
+ */
+async function manifiesto() {
+  const txt = await readFile(join(ROOT, 'manifest.webmanifest'), 'utf8');
+  return Buffer.from(txt.replaceAll('"/icons/', '"' + prefijo() + '/icons/'), 'utf8');
 }
 
 const servidor = createServer(async (req, res) => {
@@ -110,9 +133,26 @@ const servidor = createServer(async (req, res) => {
     const versionado = path.startsWith('/v/');
     if (versionado) path = path.replace(/^\/v\/[^/]+/, '');
 
-    // Sólo se sirve la app: la portada, los estilos y los módulos. Ni el
-    // server.js ni el package.json tienen nada que hacer en el navegador.
-    if (!/^\/(css|js)\/[\w.-]+$/.test(path)) throw new Error('fuera de la app');
+    // El manifiesto se sirve reescrito, para que sus iconos lleven la
+    // versión. Cachearlo poco: es barato y así un cambio de nombre o de
+    // color entra sin esperar.
+    if (path === '/manifest.webmanifest') {
+      const body = await manifiesto();
+      res.writeHead(200, {
+        'Content-Type': TYPES['.webmanifest'],
+        'Cache-Control': 'no-cache',
+        'Content-Length': body.length,
+        'X-Content-Type-Options': 'nosniff',
+      });
+      res.end(req.method === 'HEAD' ? undefined : body);
+      return;
+    }
+
+    // Sólo se sirve la app: la portada, los estilos, los módulos, los
+    // iconos y el manifiesto. Ni el server.js ni el package.json tienen
+    // nada que hacer en el navegador.
+    if (!/^\/(css|js|icons)\/[\w.-]+$/.test(path)
+      && path !== '/manifest.webmanifest') throw new Error('fuera de la app');
 
     const file = join(ROOT, normalize(path).replace(/^(\.\.[/\\])+/, ''));
     if (!file.startsWith(ROOT)) { res.writeHead(403).end('no'); return; }
@@ -120,9 +160,12 @@ const servidor = createServer(async (req, res) => {
     const info = await stat(file);
     if (!info.isFile()) throw new Error('no es un fichero');
     const marca = info.mtime.toUTCString();
-    const cache = versionado
+    // Sólo se promete inmutable en el servidor, donde la huella se fija al
+    // arrancar. En local el código cambia con la dirección igual, y esa
+    // promesa dejaría al navegador con la copia vieja.
+    const cache = versionado && EN_SERVIDOR
       ? 'public, max-age=31536000, immutable'
-      : 'no-cache';       // entrada directa a un fichero, sin versión
+      : 'no-cache';
 
     if (!versionado && req.headers['if-modified-since'] === marca) {
       res.writeHead(304, { 'Cache-Control': cache, 'Last-Modified': marca });
