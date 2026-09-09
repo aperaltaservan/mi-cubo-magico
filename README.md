@@ -465,6 +465,37 @@ o la tablet**, que es mucho más cómodo para un niño que estar delante del ord
 > falta **https de verdad**, que Dokploy resuelve solo con Let's Encrypt. Por `http://`
 > plano el botón de conectar no funcionará.
 
+### La caché: por qué las direcciones llevan una huella dentro
+
+Si miras el HTML servido verás esto:
+
+```html
+<script type="module" src="/v/16cff8f00078/js/app.js"></script>
+```
+
+Esa huella se calcula al arrancar, del contenido de todo lo que se sirve, y cambia en
+cuanto cambia cualquier fichero. `/health` la publica, que es la forma rápida de saber
+si un despliegue ha entrado de verdad:
+
+```bash
+curl -s https://tu-dominio/health
+```
+
+**No es un adorno.** Con Cloudflare por delante, el `Cache-Control: no-cache` que manda
+el origen se sustituye por un `max-age` de horas. El navegador se traía el `index.html`
+nuevo y seguía ejecutando el `app.js` viejo: la página tenía botones que el código
+cacheado no sabía encender, y desde fuera parecía que el botón estaba roto.
+
+Con la huella dentro de la dirección da igual lo que haga la caché de quien esté
+delante, porque tras un despliegue **la dirección es otra** y nadie la tiene guardada.
+Los recursos versionados se sirven con `immutable` (se pueden guardar para siempre, ya
+que su dirección cambia con su contenido) y la portada con `no-store`, porque es la que
+reparte las direcciones nuevas y si se quedara pegada no serviría de nada.
+
+Como los módulos se importan con rutas relativas (`./cube.js`), basta versionar la
+entrada: todo el árbol cuelga del mismo prefijo y se renueva junto. Eso lo comprueba
+`test/servidor.js`, que levanta el servidor de verdad y lo verifica.
+
 1. En Dokploy: **Create → Application**.
 2. **Provider**: GitHub → este repositorio → rama `main`.
 3. **Build Type**: `Dockerfile` (está en la raíz; no hay que tocar nada más).

@@ -353,7 +353,9 @@ p.lead { text-align: center; color: #cbbde0; margin: 0 0 18px; font-size: 1.02re
 .scramble.error { outline: 2px solid #ff7b7b; }
 
 /* ---------- selector de idioma ---------- */
-.idiomas { display: flex; gap: 8px; justify-content: center; margin: 6px 0 2px; }
+/* Va lo primero de la portada, arriba del todo: quien abra la app en
+   inglés tiene que poder cambiarla sin entrar en ningún sitio. */
+.idiomas { display: flex; gap: 8px; justify-content: flex-end; margin: 0 0 4px; }
 .idioma {
   display: inline-flex; align-items: center; gap: 6px;
   border: 2px solid rgba(255, 255, 255, .18); background: rgba(255, 255, 255, .06);
