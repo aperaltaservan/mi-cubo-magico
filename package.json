@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "test": "node test/test.js && node test/protocol.js && node test/geometry.js && node test/simulate.js && node test/algs.js && node test/casos.js && node test/patrones.js && node test/stats.js && node test/juegos.js && node test/entrada.js && node test/i18n.js && node test/servidor.js && node test/plataforma.js && node test/sw.js && node test/trainer.js",
+    "test": "node test/test.js && node test/protocol.js && node test/geometry.js && node test/simulate.js && node test/algs.js && node test/casos.js && node test/patrones.js && node test/stats.js && node test/juegos.js && node test/captura.js && node test/entrada.js && node test/i18n.js && node test/servidor.js && node test/plataforma.js && node test/sw.js && node test/trainer.js",
     "datos": "node dev/build_oll.js && node dev/build_f2l.js",
     "iconos": "node dev/build_icons.js"
   },

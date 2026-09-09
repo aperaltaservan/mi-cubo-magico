@@ -436,6 +436,44 @@ resuelto, y si desordenas el cubo de golpe la app se entera y replanifica.
 **El modo de reserva** (seguir los giros en vez de leer el estado) sigue ahí por si
 aparece un cubo que no sepamos decodificar; entonces sí hace falta calibrar.
 
+### 🎙️ Grabar un cubo que no entendemos (GAN, MoYu, QiYi)
+
+La app sólo habla Xiaomi/GiiKER. Los **GAN** usan otro protocolo, cifrado con AES y —lo
+importante— **con la clave derivada de la MAC Bluetooth del cubo**, que Web Bluetooth no
+te da: hay que sacarla del anuncio BLE (`watchAdvertisements()`, que no está en todas
+partes, y en Bluefy no) o pedirle al usuario que la teclee. Los **QiYi** son más
+llevaderos, con clave fija. Y los **MoYu** recientes hablan un protocolo compatible con
+el de GAN, así que caerían con el mismo decodificador.
+
+Todos se pueden portar. Lo que no se puede es **verificarlos** sin un cubo delante, y ahí
+este proyecto tiene una regla: las permutaciones se derivan de la geometría, los
+algoritmos se comprueban solos, los 41 casos de F2L se generan. Un decodificador escrito
+de oído sería la única pieza que hay que creerse.
+
+Así que en vez de adivinar, la pantalla de **🔧 Diagnóstico** graba. Hay dos botones:
+
+- **🕵️ Escuchar cualquier cubo** conecta con el aparato que sea y **se suscribe a todo lo
+  que avise**, sin entender una palabra.
+- **🔴 Grabar** apunta cada aviso con el milisegundo en que llegó, y **📋 Copiar el
+  volcado** lo deja listo para pegar en una incidencia.
+
+Encima de los botones está el **guion**: dieciséis giros en cuadraditos de color, que se
+hacen uno cada vez esperando un segundo. Unos bytes sueltos no dicen nada; unos bytes con
+*"esto salió al girar la cara de arriba"* lo dicen todo. Y el guion está montado para que
+**no cambie el cubo** —cada giro se deshace con el siguiente—, así que quien graba tiene
+una comprobación que no depende de nosotros: si al terminar el cubo no está resuelto, se
+saltó un giro y hay que repetir. Eso lo verifica `test/captura.js` aplicando el guion al
+modelo del cubo.
+
+El volcado lleva además el nombre del aparato, el navegador y **los servicios y
+características que expone**. Si el cubo sale mudo, eso también es información: Web
+Bluetooth sólo deja ver los servicios que la app pide por adelantado (`KNOWN_SERVICES` en
+`js/giiker.js`), así que un cubo silencioso significa que usa uno que todavía no está en
+esa lista.
+
+Para probar la pantalla sin tener un cubo raro, la consola tiene
+`cubo.simularCubo('GAN_1234')` y `cubo.fakeAviso('a1 3f 00 11')`.
+
 **El solucionador** está en `js/solver.js` y usa los mismos algoritmos que se enseñan a
 mano, para poder explicar cada paso. Donde el reconocimiento de casos es delicado
 (cruz amarilla y última capa) hace una búsqueda en anchura corta y exhaustiva, así que
@@ -547,6 +585,7 @@ css/styles.css    estilos
 js/cube.js        modelo del cubo (giros derivados de la geometría 3D)
 js/solver.js      método principiante por capas
 js/giiker.js      Bluetooth: conexión y paquetes
+js/captura.js     grabar un cubo que todavía no entendemos
 js/xiaomi.js      lectura del estado real del cubo
 js/calibrate.js   modo de reserva: aprender el cubo a mano
 js/cube3d.js      cubo 3D con transformaciones CSS y miniaturas, sin librerías
@@ -566,7 +605,9 @@ test/, dev/       pruebas y utilidades de desarrollo
 ```
 
 Desde la consola del navegador hay un manejador para trastear:
-`cubo.app`, `cubo.doMove('R', 1)`, `cubo.fakeMove('U', 1)` (simula un giro del cubo físico).
+`cubo.app`, `cubo.doMove('R', 1)`, `cubo.fakeMove('U', 1)` (simula un giro del cubo físico),
+`cubo.simularCubo('GAN_1234')` y `cubo.fakeAviso('a1 3f')` (finge un cubo desconocido para
+probar la grabación).
 
 ---
 

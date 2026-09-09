@@ -992,6 +992,37 @@ export const EN = {
   'Ya te la he seleccionado: cópiala y ábrela en Bluefy.':
     'I have selected it for you: copy it and open it in Bluefy.',
 
+  'Mejor aún: en <b>🔧 Diagnóstico</b> puedes <b>grabar</b> lo que dice tu cubo al hacer unos giros conocidos. Eso es lo que hace falta para escribir su decodificador y comprobarlo.':
+    'Better still: in <b>🔧 Diagnostics</b> you can <b>record</b> what your cube says while you make a known set of turns. That is what it takes to write its decoder and check it.',
+
+  // ---------- grabar un cubo desconocido ----------
+  '🎙️ Grabar un cubo que no entiendo': '🎙️ Record a cube I do not understand',
+  'La app sólo sabe hablar con los Xiaomi/GiiKER. Si tienes un <b>GAN</b>, un <b>MoYu</b> o un <b>QiYi</b>, esto graba lo que dice tu cubo al hacer unos giros conocidos. Con ese volcado se puede escribir su decodificador; sin él, sólo se puede adivinar.':
+    'The app only knows how to talk to Xiaomi/GiiKER cubes. If you have a <b>GAN</b>, a <b>MoYu</b> or a <b>QiYi</b>, this records what your cube says while you make a known set of turns. With that dump its decoder can be written; without it, it can only be guessed at.',
+  'Pon el cubo <b>resuelto</b>, con el blanco abajo y el verde delante. Dale a grabar y haz estos giros, uno cada vez, esperando un segundo entre uno y el siguiente. Al terminar el cubo tiene que estar resuelto otra vez; si no, se te ha saltado alguno.':
+    'Start with the cube <b>solved</b>, white on the bottom and green at the front. Hit record and make these turns, one at a time, waiting a second between each one. The cube has to end up solved again; if it does not, you skipped one.',
+  'El navegador sólo deja ver los servicios que la app pide por adelantado. Si tu cubo sale mudo, eso también hay que apuntarlo: significa que usa un servicio que todavía no conocemos.':
+    'The browser only lets you see the services the app asks for up front. If your cube comes out silent, that is worth reporting too: it means it uses a service we do not know about yet.',
+  '🕵️ Escuchar cualquier cubo': '🕵️ Listen to any cube',
+  '🕵️ Escuchando a {nombre}': '🕵️ Listening to {nombre}',
+  '🔴 Grabar': '🔴 Record',
+  '📋 Copiar el volcado': '📋 Copy the dump',
+  'Escuchando a {nombre}: {n} avisos enganchados':
+    'Listening to {nombre}: hooked up to {n} feeds',
+  'Conectado a {nombre}, pero no avisa de nada':
+    'Connected to {nombre}, but it does not report anything',
+  'Conecta antes un cubo, o pulsa 🕵️ Escuchar cualquier cubo':
+    'Connect a cube first, or press 🕵️ Listen to any cube',
+  'Grabando: haz los giros de arriba, uno cada vez':
+    'Recording: make the turns above, one at a time',
+  '{n} avisos apuntados': '{n} messages logged',
+  'Primero graba algo': 'Record something first',
+  'Volcado copiado. Pégalo en una incidencia de GitHub':
+    'Dump copied. Paste it into a GitHub issue',
+  'Ya te lo he seleccionado: cópialo a mano':
+    'I have selected it for you: copy it by hand',
+  'El aparato se ha desconectado': 'The device has disconnected',
+
   // ---------- añadir a la pantalla de inicio ----------
   '📲 Añadir a la pantalla de inicio':
     '📲 Add to the home screen',

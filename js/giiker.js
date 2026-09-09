@@ -115,6 +115,7 @@ export class SmartCube extends EventTarget {
   constructor() {
     super();
     this.device = null;
+    this.server = null;
     this.char = null;
     this.prevMoves = null;
     this.battery = null;
@@ -158,6 +159,7 @@ export class SmartCube extends EventTarget {
     });
 
     const server = await this.device.gatt.connect();
+    this.server = server;
 
     let service;
     try {
@@ -193,24 +195,7 @@ export class SmartCube extends EventTarget {
   }
 
   /** Lista los servicios y características visibles del aparato conectado */
-  async inspect(server) {
-    const out = [];
-    let services = [];
-    try { services = await server.getPrimaryServices(); } catch (e) { return out; }
-    for (const s of services) {
-      const row = { service: s.uuid, chars: [] };
-      try {
-        for (const c of await s.getCharacteristics()) {
-          const p = c.properties;
-          row.chars.push(c.uuid + ' [' +
-            [p.read && 'leer', p.write && 'escribir', p.notify && 'avisar']
-              .filter(Boolean).join(',') + ']');
-        }
-      } catch (e) { /* sin permiso para mirar dentro */ }
-      out.push(row);
-    }
-    return out;
-  }
+  async inspect(server) { return inspeccionar(server); }
 
   async _readBattery(server) {
     const sys = await server.getPrimaryService(SYS_SERVICE_UUID);
@@ -224,6 +209,11 @@ export class SmartCube extends EventTarget {
 
   _onValue(ev) {
     const raw = new Uint8Array(ev.target.value.buffer);
+    // los bytes tal cual, además del paquete ya entendido: así la grabación
+    // de un cubo desconocido y la de un GiiKER pasan por el mismo sitio
+    this.dispatchEvent(new CustomEvent('raw', {
+      detail: { service: SERVICE_UUID, char: CHAR_UUID, bytes: raw },
+    }));
     const pkt = parsePacket(raw);
     this.lastPacket = pkt;
     const fresh = newMoves(this.prevMoves, pkt.moves);
@@ -239,5 +229,95 @@ export class SmartCube extends EventTarget {
 
   disconnect() {
     if (this.device && this.device.gatt.connected) this.device.gatt.disconnect();
+  }
+}
+
+/** Los servicios y características que se dejan ver del aparato conectado */
+export async function inspeccionar(server) {
+  const out = [];
+  let services = [];
+  try { services = await server.getPrimaryServices(); } catch (e) { return out; }
+  for (const s of services) {
+    const row = { service: s.uuid, chars: [] };
+    try {
+      for (const c of await s.getCharacteristics()) {
+        const p = c.properties;
+        row.chars.push(c.uuid + ' [' +
+          [p.read && 'leer', p.write && 'escribir', p.notify && 'avisar']
+            .filter(Boolean).join(',') + ']');
+      }
+    } catch (e) { /* sin permiso para mirar dentro */ }
+    out.push(row);
+  }
+  return out;
+}
+
+/**
+ * Escucha a cualquier aparato sin entender una palabra de lo que dice.
+ *
+ * Se conecta, se suscribe a todo lo que avise y saca los bytes tal cual.
+ * No sirve para jugar: sirve para que alguien con un GAN, un MoYu o un
+ * QiYi pueda grabar qué manda su cubo al dar unos giros conocidos, que
+ * es lo único que falta para escribir su decodificador. A ciegas no se
+ * puede, y adivinando tampoco.
+ *
+ * Aviso importante: Web Bluetooth sólo deja ver los servicios que se
+ * piden por adelantado, así que un cubo con un servicio que no esté en
+ * KNOWN_SERVICES saldrá mudo. Eso también es información: el volcado lo
+ * dice, y entonces lo que hay que averiguar es su UUID.
+ */
+export class Escucha extends EventTarget {
+  constructor() {
+    super();
+    this.device = null;
+    this.server = null;
+    this.chars = [];
+    this.report = [];
+  }
+
+  get connected() { return !!(this.device && this.device.gatt && this.device.gatt.connected); }
+  get name() { return this.device ? this.device.name || 'Aparato' : null; }
+
+  async connect() {
+    if (!SmartCube.available) {
+      throw new Error('Este navegador no tiene Bluetooth Web. Usa Chrome o Edge.');
+    }
+    this.device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true, optionalServices: KNOWN_SERVICES,
+    });
+    this.device.addEventListener('gattserverdisconnected', () => {
+      this.chars = [];
+      this.dispatchEvent(new CustomEvent('disconnect'));
+    });
+    const server = await this.device.gatt.connect();
+    this.server = server;
+    this.report = await inspeccionar(server);
+
+    let services = [];
+    try { services = await server.getPrimaryServices(); } catch (e) { services = []; }
+    for (const s of services) {
+      let cs = [];
+      try { cs = await s.getCharacteristics(); } catch (e) { continue; }
+      for (const c of cs) {
+        if (!c.properties.notify && !c.properties.indicate) continue;
+        c.addEventListener('characteristicvaluechanged', (ev) => {
+          this.dispatchEvent(new CustomEvent('raw', {
+            detail: {
+              service: s.uuid,
+              char: c.uuid,
+              bytes: new Uint8Array(ev.target.value.buffer),
+            },
+          }));
+        });
+        // alguna se niega a avisar aunque diga que puede; las demás siguen
+        try { await c.startNotifications(); this.chars.push(c.uuid); } catch (e) { /* esa no */ }
+      }
+    }
+    this.dispatchEvent(new CustomEvent('connect', { detail: { name: this.name } }));
+    return this;
+  }
+
+  disconnect() {
+    if (this.connected) this.device.gatt.disconnect();
   }
 }

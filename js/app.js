@@ -8,13 +8,14 @@ import {
 } from './cube.js';
 import { decode, toFacelets, VALUE_COLOR } from './xiaomi.js';
 import { solve, PHASE_INFO, detalleDe } from './solver.js';
-import { SmartCube } from './giiker.js';
+import { SmartCube, Escucha, inspeccionar } from './giiker.js';
 import { Calibration, COLOR_HEX, COLOR_OPPOSITE, COLORS } from './calibrate.js';
 import { Cube3D, arrowSVG, netHTML } from './cube3d.js';
 import { fx } from './fx.js';
 import { lessonById, LESSONS } from './lessons.js';
 import { PATRONES, patronPorId } from './patrones.js';
 import { giroDeTecla, escribiendo, construirPad } from './entrada.js';
+import { GUION, nuevaCaptura, anotar, volcado, hex } from './captura.js';
 import {
   caraAlAzar, ritmoLluvia, avanzarGotas, gotaQueSeApaga,
   caminoNuevo, largoDelCamino, LLUVIA,
@@ -260,6 +261,7 @@ async function connect(anyDevice) {
       if (app.screen === 'diag') refreshDiag();
     });
     cube.addEventListener('battery', () => { if (app.screen === 'diag') refreshDiag(); });
+    cube.addEventListener('raw', (e) => apuntarAviso(e.detail));
     cube.addEventListener('disconnect', () => {
       toast('El cubo se ha desconectado');
       refreshMenu();
@@ -307,6 +309,9 @@ function reportConnectionError(err) {
       '<code>' + r.service + '</code><br>' +
       r.chars.map((c) => '&nbsp;&nbsp;· <code>' + c + '</code>').join('<br>')).join('<br>');
     html += '<hr>' + t('Copia esto y pásamelo: con ello puedo dar soporte a tu modelo.');
+    html += '<br>' + t('Mejor aún: en <b>🔧 Diagnóstico</b> puedes <b>grabar</b> lo que dice tu '
+      + 'cubo al hacer unos giros conocidos. Eso es lo que hace falta para escribir su '
+      + 'decodificador y comprobarlo.');
   } else if (err && err.name === 'NotFoundError') {
     html = t('<b>No has elegido ningún aparato</b><br>Si la lista salía vacía, '
       + 'repasa los cuatro puntos de arriba: lo más habitual es que el cubo esté '
@@ -1722,6 +1727,140 @@ function refreshDiag() {
     .join('   ') || t('sin calibrar');
   $('#d-invert').classList.toggle('on', app.invert);
   $('#d-invert').textContent = (app.invert ? '✅' : '🔁') + ' ' + t('El cubo gira al revés');
+  pintarGuion();          // los colores del guion son los del cubo de cada uno
+  refreshCaptura();
+}
+
+// ------------------------------------------------------------
+//  Grabar un cubo que no entendemos
+// ------------------------------------------------------------
+//  Escribir el decodificador de un GAN, un MoYu o un QiYi sin
+//  tener uno delante seria adivinar, y este proyecto no adivina
+//  nada: las permutaciones se derivan, los algoritmos se verifican
+//  y los casos se generan. Lo que si se puede hacer es preparar el
+//  terreno, y esto es eso: quien tenga uno graba que dice su cubo
+//  al hacer unos giros conocidos, y con ese volcado el
+//  decodificador ya se puede escribir Y COMPROBAR.
+
+let escucha = null;      // conexion "a ciegas" con un cubo cualquiera
+let captura = null;      // la ultima grabacion, este viva o terminada
+let grabando = false;
+
+/** De quien se graba: el cubo escuchado a ciegas o el que ya esta conectado */
+function fuenteDeCaptura() {
+  if (escucha && escucha.connected) return escucha;
+  if (app.cube && app.cube.connected) return app.cube;
+  return null;
+}
+
+function apuntarAviso(detalle) {
+  if (!grabando || !captura) return;
+  anotar(captura, { ...detalle, t: performance.now() });
+  if (app.screen === 'diag') refreshCaptura();
+}
+
+/** Conecta con cualquier aparato y se suscribe a todo lo que avise */
+async function escucharCualquiera() {
+  try {
+    const e = new Escucha();
+    e.addEventListener('raw', (ev) => apuntarAviso(ev.detail));
+    e.addEventListener('disconnect', () => {
+      toast(t('El aparato se ha desconectado'));
+      if (app.screen === 'diag') refreshDiag();
+    });
+    await e.connect();
+    escucha = e;
+    fx.good();
+    toast(e.chars.length
+      ? t('Escuchando a {nombre}: {n} avisos enganchados', { nombre: e.name, n: e.chars.length })
+      : t('Conectado a {nombre}, pero no avisa de nada', { nombre: e.name }), 4000);
+    refreshDiag();
+  } catch (err) {
+    if (err && err.name === 'NotFoundError') return;      // cerro el dialogo
+    console.error(err);
+    toast(String((err && err.message) || err), 4500);
+  }
+}
+
+async function alternarCaptura() {
+  if (grabando) {
+    grabando = false;
+    fx.good();
+    refreshDiag();
+    return;
+  }
+  const fuente = fuenteDeCaptura();
+  if (!fuente) {
+    toast(t('Conecta antes un cubo, o pulsa 🕵️ Escuchar cualquier cubo'), 3500);
+    return;
+  }
+  let servicios = fuente.report || [];
+  try {
+    if (fuente.server) servicios = await inspeccionar(fuente.server);
+  } catch (e) { /* con lo que haya */ }
+  captura = nuevaCaptura({
+    aparato: fuente.name || '?',
+    navegador: typeof navigator !== 'undefined' ? navigator.userAgent : '?',
+    servicios,
+    guion: GUION,
+  }, performance.now());
+  grabando = true;
+  fx.tone(660, 0.12, 'square', 0.14);
+  toast(t('Grabando: haz los giros de arriba, uno cada vez'), 3500);
+  refreshDiag();
+}
+
+async function copiarVolcado() {
+  if (!captura) { toast(t('Primero graba algo')); return; }
+  const texto = volcado(captura);
+  try {
+    await navigator.clipboard.writeText(texto);
+    toast(t('Volcado copiado. Pégalo en una incidencia de GitHub'), 3500);
+  } catch (e) {
+    // Si el navegador no deja tocar el portapapeles, al menos se deja
+    // seleccionado para copiarlo de un toque largo.
+    const el = $('#d-volcado');
+    el.textContent = texto;
+    const rango = document.createRange();
+    rango.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(rango);
+    el.scrollIntoView({ block: 'center' });
+    toast(t('Ya te lo he seleccionado: cópialo a mano'), 4000);
+  }
+}
+
+/** El guion de giros, en colores: un cuadrado por cara y su flecha */
+function pintarGuion() {
+  $('#d-guion').innerHTML = GUION.map((m, i) => {
+    const flecha = m.amount === 2 ? '×2' : m.amount === 3 ? '↺' : '↻';
+    return `<b style="background:${hexOf(m.face)}" title="${moveToString(m)}">`
+      + `<i>${i + 1}</i>${flecha}</b>`;
+  }).join('');
+}
+
+function refreshCaptura() {
+  const fuente = fuenteDeCaptura();
+  $('#d-escuchar').textContent = escucha && escucha.connected
+    ? t('🕵️ Escuchando a {nombre}', { nombre: escucha.name })
+    : t('🕵️ Escuchar cualquier cubo');
+  $('#d-grabar').textContent = grabando ? t('⏹ Parar') : t('🔴 Grabar');
+  $('#d-grabar').classList.toggle('grabando', grabando);
+  $('#d-grabar').disabled = !fuente && !grabando;
+  $('#d-copiar').disabled = !captura;
+
+  const caja = $('#d-volcado');
+  if (!captura) { caja.textContent = ''; return; }
+  if (grabando) {
+    // mientras se graba no se rehace el volcado entero en cada aviso: sólo
+    // la cuenta y el último, que es lo que dice si el cubo está hablando
+    const ultimo = captura.avisos[captura.avisos.length - 1];
+    caja.textContent = t('{n} avisos apuntados', { n: captura.avisos.length })
+      + (ultimo ? '\n' + String(ultimo.ms).padStart(7) + '  ' + hex(ultimo.bytes) : '');
+    return;
+  }
+  caja.textContent = volcado(captura);
 }
 
 // ------------------------------------------------------------
@@ -1944,6 +2083,9 @@ function boot() {
     startGame('explore', null, true);
   };
   $('#d-invert').onclick = () => { app.invert = !app.invert; save(); refreshDiag(); };
+  $('#d-escuchar').onclick = () => { fx.click(); escucharCualquiera(); };
+  $('#d-grabar').onclick = () => { fx.click(); alternarCaptura(); };
+  $('#d-copiar').onclick = () => { fx.click(); copiarVolcado(); };
   $('#btn-hint').onclick = () => { fx.click(); if (app.game && app.game.hint) app.game.hint(); };
   $('#btn-detalle').onclick = () => {
     fx.click();
@@ -2042,6 +2184,25 @@ function boot() {
       lastMoveInfo = detail;
       if (calibration) calibration.onMove(detail);
       else onPhysicalMove(detail);
+    },
+    // Finge un cubo desconocido para probar la grabacion sin tener uno:
+    //   cubo.simularCubo('GAN_1234')  y luego  cubo.fakeAviso('a1 3f 00')
+    // Es la unica forma de comprobar esa pantalla mientras no aparezca
+    // por aqui un GAN de verdad.
+    simularCubo(nombre) {
+      escucha = {
+        connected: true, name: nombre || 'Cubo de prueba', server: null, chars: ['prueba'],
+        report: [{ service: 'servicio-de-prueba', chars: ['caracteristica-de-prueba [avisar]'] }],
+      };
+      if (app.screen === 'diag') refreshDiag();
+      return escucha.name;
+    },
+    fakeAviso(hexBytes, char) {
+      const bytes = Uint8Array.from(
+        String(hexBytes).trim().split(/[\s,]+/).map((x) => parseInt(x, 16) & 0xff),
+      );
+      apuntarAviso({ service: 'servicio-de-prueba', char: char || 'caracteristica-de-prueba', bytes });
+      return bytes.length;
     },
     get cube3d() { return cube3d; },
   };

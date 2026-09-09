@@ -451,6 +451,25 @@
     <button class="btn ghost" id="d-invert">🔁 El cubo gira al revés</button>
     <p class="note" data-i18n>Si al girar una cara la app dice otra cara distinta, vuelve a enseñar
     los colores. Si gira en el sentido contrario, pulsa el botón de arriba.</p>
+
+    <h2 class="cab-seccion" data-i18n>🎙️ Grabar un cubo que no entiendo</h2>
+    <p class="note" data-i18n>La app sólo sabe hablar con los Xiaomi/GiiKER. Si tienes un
+    <b>GAN</b>, un <b>MoYu</b> o un <b>QiYi</b>, esto graba lo que dice tu cubo al hacer unos
+    giros conocidos. Con ese volcado se puede escribir su decodificador; sin él, sólo se
+    puede adivinar.</p>
+    <button class="btn ghost" id="d-escuchar" data-i18n>🕵️ Escuchar cualquier cubo</button>
+    <p class="note" data-i18n>Pon el cubo <b>resuelto</b>, con el blanco abajo y el verde delante.
+    Dale a grabar y haz estos giros, uno cada vez, esperando un segundo entre uno y el siguiente.
+    Al terminar el cubo tiene que estar resuelto otra vez; si no, se te ha saltado alguno.</p>
+    <div class="guion" id="d-guion"></div>
+    <div class="row">
+      <button class="btn ghost" id="d-grabar">🔴 Grabar</button>
+      <button class="btn ghost" id="d-copiar" data-i18n>📋 Copiar el volcado</button>
+    </div>
+    <pre class="volcado" id="d-volcado"></pre>
+    <p class="note" data-i18n>El navegador sólo deja ver los servicios que la app pide por
+    adelantado. Si tu cubo sale mudo, eso también hay que apuntarlo: significa que usa un
+    servicio que todavía no conocemos.</p>
     <div class="spacer"></div>
   </section>
 
