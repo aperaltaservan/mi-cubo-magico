@@ -428,3 +428,8 @@ Dos piezas vienen de trabajo ajeno y están marcadas como tal en el código:
   uno a uno por `dev/build_oll.js`.
 
 El resto —modelo del cubo, solucionador, entrenadores, interfaz y pruebas— es propio.
+
+---
+
+Creado por **[peraltalberto.com](https://peraltalberto.com)** ·
+[Código en GitHub](https://github.com/aperaltaservan/mi-cubo-magico)

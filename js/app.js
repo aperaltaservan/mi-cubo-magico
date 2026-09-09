@@ -105,6 +105,9 @@ function go(name) {
   app.screen = name;
   if (name !== 'cal') calibration = null;   // no dejar la calibracion a medias
   $$('.screen').forEach((s) => s.classList.toggle('active', s.id === 'screen-' + name));
+  // En las pantallas donde se juega el sitio hace falta, y ademas un nino
+  // podria pulsar los enlaces sin querer: el pie solo sale en reposo.
+  $('#pie').classList.toggle('hidden', name === 'play' || name === 'drill');
   if (name !== 'play') { stopGame(); }
   if (name === 'menu') refreshMenu();
   if (name === 'levels') buildLevels();
