@@ -220,9 +220,20 @@ function initTimer() {
     if (ctx.app.screen !== 'timer' || e.code !== 'Space') return;
     e.preventDefault(); soltar();
   });
-  const disp = $('#tm-display');
-  disp.addEventListener('pointerdown', (e) => { e.preventDefault(); pulsar(); });
-  disp.addEventListener('pointerup', (e) => { e.preventDefault(); soltar(); });
+  // El numero y el boton hacen lo mismo que la barra: se pulsa, se suelta
+  // y arranca. Se usa pointerdown/up y no click a proposito, para que el
+  // gesto sea el mismo con raton, con dedo y con tecla.
+  for (const sel of ['#tm-display', '#tm-arrancar']) {
+    const el = $(sel);
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); pulsar(); });
+    el.addEventListener('pointerup', (e) => { e.preventDefault(); soltar(); });
+    el.addEventListener('pointercancel', () => soltar());
+  }
+  // El boton no debe responder ademas por su cuenta a la barra ni al Enter:
+  // de eso ya se encarga el manejador de arriba y si no contaria dos veces.
+  $('#tm-arrancar').addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'Enter') e.preventDefault();
+  });
   $('#tm-insp').classList.toggle('on', timer.inspeccion);
 }
 
@@ -234,6 +245,7 @@ function nuevaMezcla() {
   timer.fuera = false;
   timer.seleccion = -1;
   timer.penalInsp = 0;
+  timer.t0insp = 0;
   timer.avisos = 0;
   // una mezcla oficial se aplica sobre el cubo resuelto: si no lo esta,
   // primero te guio para resolverlo en vez de dejarte esperando
@@ -246,6 +258,7 @@ function timerReset() {
   cancelAnimationFrame(timer.raf);
   if (['corriendo', 'armado', 'preparando', 'inspeccion'].includes(timer.fase)) {
     timer.penalInsp = 0;
+    timer.t0insp = 0;
     if (conCubo()) replantearMezcla(); else timer.fase = 'idle';
   }
 }
@@ -270,8 +283,14 @@ function pulsar() {
 function soltar() {
   if (conCubo()) return;
   clearTimeout(timer.armar);
-  if (timer.fase === 'armado') arrancar();
-  else if (timer.fase === 'preparando') { timer.fase = 'idle'; renderTimer(); }
+  if (timer.fase === 'armado') { arrancar(); return; }
+  if (timer.fase === 'preparando') {
+    // si te arrepientes a medias vuelves a la inspeccion, no al principio:
+    // los quince segundos siguen corriendo aunque sueltes la barra
+    timer.fase = timer.t0insp ? 'inspeccion' : 'idle';
+    renderTimer();
+    if (timer.t0insp) tick();
+  }
 }
 
 function empezarInspeccion() {
@@ -281,23 +300,24 @@ function empezarInspeccion() {
   timer.avisos = 0;
   ctx.fx.tone(440, 0.09, 'sine', 0.12);
   ctx.fx.say('Inspección');
+  renderTimer();
   tick();
 }
 
 function arrancar() {
   // La penalización se calcula aquí, del tiempo real transcurrido, no del
   // bucle de dibujo: si el navegador deja de refrescar, seguiría valiendo.
-  if (timer.fase === 'inspeccion') {
+  // Se mira el reloj de la inspeccion, no la fase: sin cubo, pulsar para
+  // armar el crono ya ha sacado al timer de la fase 'inspeccion', y
+  // mirando la fase el +2 y el DNF no se ponian nunca.
+  if (timer.t0insp) {
     timer.penalInsp = S.inspectionPenalty((performance.now() - timer.t0insp) / 1000);
+    timer.t0insp = 0;
   }
   timer.fase = 'corriendo';
   timer.t0 = performance.now();
   ctx.fx.tone(880, 0.08, 'sine', 0.12);
-  $('#tm-display').className = 'timer-big';
-  $('#tm-estado').innerHTML = conCubo()
-    ? 'Corriendo… paro solo al resolverlo.' + (timer.penalInsp === 2 ? ' <b>(+2 de inspección)</b>'
-      : timer.penalInsp === S.DNF ? ' <b>(DNF de inspección)</b>' : '')
-    : 'Pulsa para parar';
+  renderTimer();
   tick();
 }
 
@@ -339,9 +359,6 @@ function tick() {
       const disp = $('#tm-display');
       disp.className = 'timer-big ' + (t > 17 ? 'penal' : t > 15 ? 'penal' : t > 12 ? 'aviso' : 'inspeccion');
       disp.textContent = t <= 15 ? String(Math.ceil(15 - t)) : (t <= 17 ? '+2' : 'DNF');
-      $('#tm-estado').innerHTML = conCubo()
-        ? 'Mira el cubo. <b>Al primer giro arranca el crono.</b>'
-        : 'Suelta la barra para arrancar';
     } else return;
     timer.raf = requestAnimationFrame(paso);
   };
@@ -385,9 +402,9 @@ function enRuta(faltan) {
 
 /** Con cubo inteligente el cronómetro lo maneja el propio cubo */
 function timerOnState(state) {
+  if (!conCubo()) { renderTimer(); return; }
   const sc = escena('tm-scene');
   if (!sc.animating) sc.render(state);
-  if (!conCubo()) return;
 
   if (timer.fase === 'resolver') {
     if (isSolved(state)) {
@@ -422,7 +439,10 @@ function renderTimer() {
   const est = $('#tm-estado');
   const cubo = conCubo();
   const sc = escena('tm-scene');
-  if (!sc.animating) sc.render(ctx.app.state);
+  // Con cubo la escena es tu cubo. Sin cubo tu cubo no lo ve nadie, asi
+  // que se ensena como tiene que quedar al aplicar la mezcla: sirve para
+  // comprobar que la has hecho bien antes de arrancar.
+  if (!sc.animating) sc.render(cubo ? ctx.app.state : (timer.objetivo || ctx.app.state));
   pintarMezcla();
 
   disp.className = 'timer-big' + (timer.fase === 'armado' ? ' listo'
@@ -436,7 +456,15 @@ function renderTimer() {
   else if (timer.fase === 'resolver') disp.textContent = '—';
   else if (timer.fase === 'listo') disp.textContent = timer.inspeccion ? '15' : '0.00';
   else if (timer.fase === 'preparando') disp.textContent = '…';
+  // el numero lo lleva el bucle de dibujo, pero se pone ya al arrancar:
+  // asi no se queda un instante con lo que decia antes
+  else if (timer.fase === 'corriendo') disp.textContent = S.formatTime(performance.now() - timer.t0);
   else if (timer.fase === 'armado') disp.textContent = '¡YA!';
+
+  // lo que se arrastra de la inspeccion, dicho donde se vea
+  const notaPenal = timer.fase !== 'corriendo' ? ''
+    : timer.penalInsp === 2 ? ' <b>(+2 de inspección)</b>'
+      : timer.penalInsp === S.DNF ? ' <b>(DNF de inspección)</b>' : '';
 
   if (cubo) {
     const faltan = timer.fase === 'mezclando' ? faltaMezcla() : [];
@@ -450,17 +478,47 @@ function renderTimer() {
         ? '<b>Pulsa</b> (o barra espaciadora) y empiezan los <b>15 s de inspección</b>.'
         : '<b>Listo.</b> El crono arranca en cuanto muevas.',
       inspeccion: 'Mira el cubo. <b>Al primer giro arranca el crono.</b>',
-      corriendo: 'Corriendo… paro solo al resolverlo.',
+      corriendo: 'Corriendo… paro solo al resolverlo.' + notaPenal,
     }[timer.fase] || 'Sujeta el cubo con el <b>blanco abajo</b> y el <b>verde delante</b>.';
   } else {
-    est.innerHTML = timer.fase === 'corriendo' ? 'Pulsa para parar'
-      : timer.fase === 'inspeccion' ? 'Suelta la barra para arrancar'
-        : 'Mantén la <b>barra espaciadora</b> (o toca el número) y suelta para arrancar';
+    est.innerHTML = {
+      corriendo: 'Corriendo. <b>Barra espaciadora</b> o el botón para parar.' + notaPenal,
+      inspeccion: 'Inspección. Mantén pulsado y <b>suelta</b> para arrancar.',
+      preparando: 'Sigue pulsando…',
+      armado: '<b>¡Suelta!</b>',
+    }[timer.fase] || (timer.inspeccion
+      ? 'Aplica la mezcla a tu cubo. Luego <b>barra espaciadora</b> (o el botón) '
+        + 'y empiezan los <b>15 s de inspección</b>.'
+      : 'Aplica la mezcla a tu cubo. Luego <b>mantén la barra</b> (o el botón) '
+        + 'y suelta para arrancar.');
   }
+  pintarBotonCrono(cubo);
 
   $('#tm-penal').style.display = solves().length ? 'flex' : 'none';
   renderStats();
   renderHistorial();
+}
+
+/**
+ * El boton de arrancar y parar. Hace lo mismo que la barra espaciadora,
+ * que es lo que hace falta en un movil y en cualquier sitio donde no haya
+ * teclado. Con cubo conectado el crono lo maneja el propio cubo, y ahi el
+ * boton solo sirve para abrir la inspeccion.
+ */
+function pintarBotonCrono(cubo) {
+  const b = $('#tm-arrancar');
+  if (cubo) {
+    const util = timer.fase === 'listo' && timer.inspeccion;
+    b.className = (util ? '' : 'hidden ') + 'btn primary';
+    b.textContent = '👁️ Empezar la inspección';
+    return;
+  }
+  b.className = 'btn ' + (timer.fase === 'corriendo' ? 'danger' : 'primary');
+  b.textContent = timer.fase === 'corriendo' ? '⏹️ Parar'
+    : timer.fase === 'armado' ? '¡Suelta!'
+      : timer.fase === 'preparando' ? 'Sigue pulsando…'
+        : timer.fase === 'inspeccion' ? '▶️ Mantén y suelta para arrancar'
+          : timer.inspeccion ? '👁️ Empezar la inspección' : '▶️ Arrancar';
 }
 
 /**
@@ -573,6 +631,8 @@ function renderFridrich() {
   const esGuia = pestana === 'guia';
   $('#fr-guia').style.display = esGuia ? '' : 'none';
   $('#fr-casos').style.display = esGuia ? 'none' : '';
+  // en la lista de casos no hay nada que girar, solo se elige
+  ctx.padEn(esGuia ? 'fridrich' : null);
   if (esGuia) { renderGuia(); return; }
 
   const set = SETS[pestana];
@@ -792,7 +852,8 @@ function renderDrill() {
     $('#dr-formula').innerHTML = chips(drill.setup);
     $('#dr-tip').innerHTML = ctx.app.mode === 'state'
       ? 'Con el cubo <b>resuelto</b>, aplica esta mezcla. Te aviso cuando llegues.'
-      : 'Pulsa el botón de abajo y te lo preparo en la pantalla.';
+      : 'Pulsa <b>⚡ Prepararlo en la pantalla</b> y luego resuélvelo'
+        + (ctx.sinCubo() ? ' con el teclado.' : ' con tu cubo.');
     $('#dr-tiempo').textContent = '—';
     return;
   }
@@ -848,7 +909,9 @@ function renderAlgos() {
     };
     box.appendChild(fila);
   });
-  $('#dr-grabar').innerHTML = drill.grabando ? '⏹ Parar' : '🔴 Grabar con el cubo';
+  // se graba de los giros que llegan, vengan del cubo o del teclado
+  $('#dr-grabar').innerHTML = drill.grabando ? '⏹ Parar'
+    : ctx.sinCubo() ? '🔴 Grabar con el teclado' : '🔴 Grabar con el cubo';
   $('#dr-grabar').classList.toggle('grabando', drill.grabando);
 }
 

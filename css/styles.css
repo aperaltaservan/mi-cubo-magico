@@ -50,6 +50,8 @@ p.lead { text-align: center; color: #cbbde0; margin: 0 0 18px; font-size: 1.02re
 .btn:active { transform: scale(.97); filter: brightness(.95); }
 .btn.primary { background: linear-gradient(135deg, #ffd93d, #ffb03a); }
 .btn.blue { background: linear-gradient(135deg, #62b6ff, #4d96ff); color: #06224a; }
+/* parar el cronometro: en rojo, para verlo sin buscarlo */
+.btn.danger { background: linear-gradient(135deg, #ff7b7b, #e14b4b); color: #fff; }
 .btn.ghost {
   background: rgba(255, 255, 255, .1); color: #fff; box-shadow: none;
   border: 2px solid rgba(255, 255, 255, .22); font-size: 1rem; padding: 13px;
@@ -149,7 +151,17 @@ p.lead { text-align: center; color: #cbbde0; margin: 0 0 18px; font-size: 1.02re
   display: flex; flex-direction: column; align-items: center; gap: 3px;
 }
 .pad button span { font-size: 1.1rem; }
-.pad button:active { transform: scale(.94); }
+.pad button em { font-style: normal; font-size: .76rem; letter-spacing: .02em; }
+/* La tecla que hace lo mismo que el boton, escrita en el propio boton:
+   asi se aprende el teclado usando el raton, sin tener que leer ayuda. */
+.pad button kbd {
+  font: inherit; font-size: .62rem; font-weight: 800; line-height: 1;
+  background: rgba(0, 0, 0, .22); border-radius: 5px; padding: 2px 4px;
+}
+.pad button:active,
+.pad button.pulsado { transform: scale(.94); filter: brightness(1.35); }
+/* El teclado es uno solo y se muda a la pantalla donde haga falta */
+.pad-slot:empty { display: none; }
 
 /* ---------- tarjetas de nivel ---------- */
 .levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }

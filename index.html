@@ -25,7 +25,7 @@
 
     <button class="btn blue" id="btn-nocube">
       <span class="emoji">🎮</span>
-      <span>Jugar sin cubo<small>Con los botones de la pantalla</small></span>
+      <span>Jugar sin cubo<small>Con el teclado o los botones de la pantalla</small></span>
     </button>
 
     <button class="btn ghost" id="btn-scan">🔍 No sale mi cubo en la lista</button>
@@ -205,6 +205,7 @@
     <div class="move-card" id="tm-move"></div>
     <div class="timer-big" id="tm-display">0.00</div>
     <p class="note" id="tm-estado"></p>
+    <button class="btn primary" id="tm-arrancar">Arrancar</button>
     <div class="row" id="tm-penal" style="display:none">
       <button class="btn ghost" data-pen="0">OK</button>
       <button class="btn ghost" data-pen="2">+2</button>
@@ -241,6 +242,7 @@
         <div class="formula" id="fr-alg"></div>
         <p class="kidtip" id="fr-tip"></p>
       </div>
+      <div class="pad-slot"></div>
       <p class="note">Mientras resuelves te digo en qué paso estás y qué caso de OLL o PLL
       tienes delante, con su algoritmo.</p>
     </div>
@@ -265,6 +267,8 @@
       <div class="formula" id="dr-formula"></div>
       <p class="kidtip" id="dr-tip"></p>
     </div>
+    <button class="btn ghost" id="dr-auto">⚡ Prepararlo en la pantalla</button>
+    <div class="pad-slot"></div>
     <div class="timer-big" id="dr-tiempo" style="font-size:2.4rem;margin:8px 0">—</div>
     <div class="statgrid" id="dr-stats"></div>
 
@@ -278,7 +282,6 @@
       <button class="btn ghost" id="dr-escribir">✏️ Escribir</button>
     </div>
     <div class="spacer"></div>
-    <button class="btn ghost" id="dr-auto">⚡ Prepararlo en la pantalla</button>
   </section>
 
   <!-- ============ PATRONES ============ -->
@@ -328,7 +331,7 @@
     <div class="progress"><i id="play-bar" style="width:0%"></i></div>
     <div class="steps" id="play-steps"></div>
 
-    <div class="pad hidden" id="pad"></div>
+    <div class="pad-slot"><div class="pad hidden" id="pad"></div></div>
     <div class="spacer"></div>
     <button class="btn ghost hidden" id="play-action"></button>
     <button class="btn ghost hidden" id="play-action2"></button>

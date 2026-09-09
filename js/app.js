@@ -14,6 +14,7 @@ import { Cube3D, arrowSVG, netHTML } from './cube3d.js';
 import { fx } from './fx.js';
 import { lessonById, LESSONS } from './lessons.js';
 import { PATRONES, patronPorId } from './patrones.js';
+import { giroDeTecla, escribiendo, construirPad } from './entrada.js';
 import * as sections from './sections.js';
 
 // ------------------------------------------------------------
@@ -114,6 +115,7 @@ function go(name) {
   if (name === 'levels') buildLevels();
   if (name === 'patrones') buildPatrones();
   if (name === 'diag') refreshDiag();
+  padEn(name === 'play' || name === 'drill' ? name : null);
   sections.onScreen(name);
 }
 
@@ -447,7 +449,8 @@ function refreshMenu() {
   }
   $('#menu-note').textContent = connected
     ? 'Conectado a ' + app.cube.name
-    : 'Modo sin cubo: usarás los botones de la pantalla.';
+    : 'Modo sin cubo: gira con el teclado (U R F D L B, con Mayúsculas al revés) '
+      + 'o con los botones de la pantalla.';
   $('#btn-recal').classList.toggle('hidden', !connected || app.mode === 'state');
   $('#btn-diag').classList.toggle('hidden', !connected);
   $$('#btn-voice, #btn-voice2').forEach((b) => b.classList.toggle('on', fx.voiceOn));
@@ -604,25 +607,39 @@ function setSteps(total, doneCount, curLabel) {
 function setBar(pct) { $('#play-bar').style.width = Math.max(0, Math.min(100, pct)) + '%'; }
 
 // ------------------------------------------------------------
-//  Teclado en pantalla (modo sin cubo)
+//  Meter giros sin cubo: teclado de verdad y botones en pantalla
 // ------------------------------------------------------------
-function buildPad() {
-  const pad = $('#pad');
-  pad.innerHTML = '';
-  for (const amount of [1, 3]) {
-    for (const f of FACES) {
-      const b = document.createElement('button');
-      b.style.background = hexOf(f);
-      b.innerHTML = `<span>${amount === 1 ? '↻' : '↺'}</span>${COLOR_SHORT[colorOf(f)] || ''}`;
-      b.onclick = () => doMove(f, amount, false);
-      pad.appendChild(b);
-    }
-  }
-}
+//  El teclado de pantalla es UNO solo y se muda a la pantalla que lo
+//  necesite (jugar, la guia de Fridrich, entrenar un caso). Antes vivia
+//  dentro de la pantalla de juego y por eso el resto del modo sin cubo
+//  se quedaba sin manera de mover el cubo.
+//
+//  Las teclas de verdad valen exactamente donde se ven los botones. Asi
+//  la regla es facil de tener en la cabeza y, sobre todo, con un cubo
+//  conectado no hay teclas que muevan el cubo de la pantalla y lo dejen
+//  diciendo una cosa distinta de la que tienes en la mano.
 
-function padVisible(on) {
-  $('#pad').classList.toggle('hidden', !on);
-  if (on) buildPad();
+let padPantalla = null;
+
+/** ¿Estamos sin cubo, o sea, hay que dar nosotros los giros? */
+function sinCubo() { return !(app.cube && app.cube.connected); }
+
+/** Mete el teclado de pantalla en `pantalla`, o lo quita con null */
+function padEn(pantalla) {
+  const pad = $('#pad');
+  const hueco = pantalla && sinCubo()
+    ? $('#screen-' + pantalla + ' .pad-slot')
+    : null;
+  padPantalla = hueco ? pantalla : null;
+  pad.classList.toggle('hidden', !hueco);
+  if (!hueco) return;
+  if (pad.parentElement !== hueco) hueco.appendChild(pad);
+  construirPad(pad, {
+    caras: FACES,
+    hexOf,
+    corto: (f) => COLOR_SHORT[colorOf(f)] || '',
+    onMove: (f, amount) => doMove(f, amount, false),
+  });
 }
 
 // ------------------------------------------------------------
@@ -1339,7 +1356,6 @@ function startGame(kind, arg, verify) {
   go('play');
   initCube3D();
   repaint();
-  padVisible(!(app.cube && app.cube.connected));
   $('#play-action').classList.add('hidden');
   $('#play-action2').classList.add('hidden');
   $('#play-formula').innerHTML = '';
@@ -1398,6 +1414,25 @@ function refreshDiag() {
 function boot() {
   load();
   fx.init();
+
+  // Las letras giran el cubo alli donde se ven los botones. Va aqui y no
+  // en el cuerpo del modulo para que importar app.js no ate nada por su
+  // cuenta antes de que exista la pagina.
+  document.addEventListener('keydown', (e) => {
+    // e.repeat: dejar la tecla pulsada no debe poner el cubo a dar vueltas
+    if (!padPantalla || e.repeat || escribiendo(e.target)) return;
+    const giro = giroDeTecla(e);
+    if (!giro) return;
+    e.preventDefault();
+    doMove(giro.face, giro.amount, false);
+    // el boton equivalente parpadea, para ir atando la tecla con su color
+    const i = (giro.amount === 3 ? FACES.length : 0) + FACES.indexOf(giro.face);
+    const b = $('#pad').children[i];
+    if (b) {
+      b.classList.add('pulsado');
+      setTimeout(() => b.classList.remove('pulsado'), 160);
+    }
+  });
 
   $('#btn-connect').onclick = () => { fx.click(); connect(false); };
   $('#btn-scan').onclick = async () => {
@@ -1488,7 +1523,7 @@ function boot() {
 
   sections.init({
     app, go, toast, fx, hexMap, hexOf, startGame,
-    moveCard, colorFem,
+    moveCard, colorFem, padEn, sinCubo,
     get lastMove() { return app.lastMove; },
     newScene: (host, size) => new Cube3D(host, { size, colors: hexMap() }),
     setState: (st) => {

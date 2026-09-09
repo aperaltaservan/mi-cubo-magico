@@ -10,3 +10,6 @@ desktop.ini
 # ficheros temporales
 *.log
 /tmp/
+
+# material propio que no va al repositorio
+publi/
