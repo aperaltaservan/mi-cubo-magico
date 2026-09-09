@@ -1,8 +1,11 @@
 // Los juegos de colores: que sean jugables, no sólo que no revienten.
-import { FACES } from '../js/cube.js';
+import * as C from '../js/cube.js';
+const { FACES } = C;
 import {
   caraAlAzar, ritmoLluvia, avanzarGotas, gotaQueSeApaga,
   caminoNuevo, largoDelCamino, LLUVIA, CAMINO,
+  destinoDePegatina, estrellaNueva, giroParaEstrella, senuelos,
+  opcionesDeRonda, seVe, esCentro,
 } from '../js/juegos.js';
 
 let ok = 0, bad = 0;
@@ -146,6 +149,116 @@ console.log('--- lo largos que se van poniendo ---');
   }
   t('los caminos sólo se alargan', baja === 0, baja + ' veces al revés');
   t('pero no sin fin', largoDelCamino(999) === CAMINO.tope, largoDelCamino(999));
+}
+
+console.log('--- sigue la estrella: a dónde va una pegatina ---');
+{
+  // La comprobación que vale: seguir la pegatina con applyMove, que es el
+  // motor de verdad de la app, y ver si dice lo mismo. Si destinoDePegatina
+  // leyera la permutación al revés, esto lo cazaría en el primer giro.
+  let malos = 0, total = 0;
+  for (const face of FACES) {
+    for (const amount of [1, 2, 3]) {
+      // un cubo con 54 valores distintos: así se ve a dónde va cada pegatina
+      const marcas = Array.from({ length: 54 }, (_, i) => i);
+      const tras = C.applyMove(marcas, face, amount);
+      for (let i = 0; i < 54; i++) {
+        total++;
+        if (destinoDePegatina(i, face, amount) !== tras.indexOf(i)) malos++;
+      }
+    }
+  }
+  t('seguir una pegatina coincide con girar el cubo', malos === 0,
+    malos + ' de ' + total + ' mal');
+
+  // dar la vuelta entera deja cada pegatina donde estaba
+  let vueltas = 0;
+  for (const face of FACES) {
+    for (let i = 0; i < 54; i++) {
+      let x = i;
+      for (let k = 0; k < 4; k++) x = destinoDePegatina(x, face, 1);
+      if (x !== i) vueltas++;
+    }
+  }
+  t('cuatro cuartos de vuelta no mueven nada', vueltas === 0, vueltas + ' descolocadas');
+  t('una cara no mueve las pegatinas de la opuesta',
+    destinoDePegatina(0, 'D', 1) === 0 && destinoDePegatina(30, 'U', 1) === 30);
+}
+
+console.log('--- la pregunta de la estrella tiene que ser una pregunta ---');
+{
+  let fuera = 0, centro = 0;
+  for (let i = 0; i < 400; i++) {
+    const e = estrellaNueva(rnd);
+    if (!seVe(e)) fuera++;
+    if (esCentro(e)) centro++;
+  }
+  t('la estrella siempre se ve', fuera === 0, fuera + ' escondidas');
+  t('y nunca cae en un centro', centro === 0, centro + ' centros');
+
+  // desde cualquier pegatina del cubo, incluidas las que no se ven, tiene
+  // que haber un giro que la traiga a la vista: si no, el juego se atasca
+  let sinGiro = 0, quieta = 0, escondida = 0;
+  for (let i = 0; i < 54; i++) {
+    if (esCentro(i)) continue;
+    const g = giroParaEstrella(i, rnd);
+    if (!g) { sinGiro++; continue; }
+    const destino = destinoDePegatina(i, g.face, g.amount);
+    if (destino === i) quieta++;
+    if (!seVe(destino)) escondida++;
+  }
+  t('desde cualquier pegatina hay giro que vale', sinGiro === 0, sinGiro + ' sin salida');
+  t('el giro siempre la mueve', quieta === 0, quieta + ' se quedan quietas');
+  t('y la deja a la vista', escondida === 0, escondida + ' se esconden');
+  t('un centro no tiene giro que valga', giroParaEstrella(4, rnd) === null);
+}
+
+console.log('--- los señuelos ---');
+{
+  const st = C.applyAlg(C.solvedState(), C.randomScramble(20, rnd));
+  let malColor = 0, repetido = 0, esLaBuena = 0, invisible = 0, pocos = 0;
+  for (let k = 0; k < 300; k++) {
+    const destino = estrellaNueva(rnd);
+    const cuantos = 2 + (k % 3);
+    const lista = senuelos(st, destino, cuantos, rnd);
+    if (lista.length < cuantos) pocos++;
+    if (new Set(lista).size !== lista.length) repetido++;
+    for (const i of lista) {
+      if (i === destino) esLaBuena++;
+      if (!seVe(i) || esCentro(i)) invisible++;
+    }
+  }
+  t('nunca sale la respuesta como señuelo', esLaBuena === 0, esLaBuena + ' veces');
+  t('ni se repiten entre ellos', repetido === 0, repetido + ' repetidos');
+  t('todos se ven y ninguno es un centro', invisible === 0, invisible + ' imposibles');
+  t('salen los que se piden', pocos === 0, pocos + ' rondas cortas');
+
+  // lo que hace que haya que seguir la pieza: en el cubo resuelto hay ocho
+  // pegatinas de cada color a la vista, así que los señuelos son del mismo
+  const resuelto = C.solvedState();
+  let distinto = 0;
+  for (let k = 0; k < 200; k++) {
+    const destino = estrellaNueva(rnd);
+    for (const i of senuelos(resuelto, destino, 3, rnd)) {
+      if (resuelto[i] !== resuelto[destino]) distinto++;
+    }
+  }
+  t('los señuelos son del mismo color que la buena', distinto === 0,
+    distinto + ' de otro color');
+}
+
+console.log('--- la ronda se va poniendo más difícil ---');
+{
+  let baja = 0;
+  let previo = opcionesDeRonda(0);
+  t('empieza con tres opciones', previo === 3, previo);
+  for (let n = 1; n < 200; n++) {
+    const o = opcionesDeRonda(n);
+    if (o < previo) baja++;
+    previo = o;
+  }
+  t('sólo se ponen más opciones', baja === 0, baja + ' veces al revés');
+  t('pero no más de cuatro', opcionesDeRonda(9999) === 4, opcionesDeRonda(9999));
 }
 
 console.log('');

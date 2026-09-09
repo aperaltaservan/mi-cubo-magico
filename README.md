@@ -49,7 +49,7 @@ la app se entera y sigue desde donde esté. Si se desconecta y vuelve, tampoco p
 
 | | Sección | Para quién |
 |---|---|---|
-| 👶 | **Para peques** | Cinco juegos para empezar de cero |
+| 👶 | **Para peques** | Seis juegos para empezar de cero |
 | 📚 | **Aprender a resolverlo** | Tutorial del método principiante, lección a lección |
 | 🎨 | **Patrones** | Dibujos con el cubo, guiados giro a giro |
 | ⏱️ | **Cronómetro** | Mezclas y medias al estilo WCA |
@@ -88,6 +88,22 @@ juego roto, y eso se comprueba en las pruebas.
 
 El color de la que va primera **se dice en voz alta**, así que se puede jugar sin saber
 leer. El botón 💡 la señala y repite el color.
+
+### ⭐ Sigue la estrella
+Una pegatina se marca con una estrella, el niño gira la cara que se le pide y entonces la
+estrella **desaparece**: hay que decir a dónde ha ido tocándola en el cubo.
+
+Es la idea que le falta a quien empieza y la que más cuesta: **las piezas no desaparecen ni
+cambian de color**, se mueven enteras y van a un sitio que se puede seguir con el ojo. Quien
+entiende eso deja de girar al azar.
+
+El detalle que hace que sea un juego y no un adorno: **los señuelos son siempre del mismo
+color que la respuesta**. Si no lo fueran, bastaría con buscar el único rojo de la pantalla
+y no habría nada que seguir. Empieza con tres opciones y pasa a cuatro a los cinco aciertos.
+
+Es imposible atascarse. Si giras una cara que no lleva la estrella, te lo dice y no pasa
+nada. Si la estrella se va por detrás del cubo, te pide un giro que la traiga. Y el botón 💡
+quita un señuelo en vez de darte la respuesta.
 
 ### 🔙 Deshaz la mezcla ← **empieza por aquí**
 El juego importante para un niño de 4 años.
@@ -136,12 +152,20 @@ Si se equivoca no pasa nada: la app recalcula sola y sigue desde donde esté.
 ### Las reglas de los juegos, aparte
 
 Lo que se puede decidir sin pantalla —qué color cae, cuál se apaga al girar una cara,
-cómo es el camino, a qué ritmo va la cosa— vive en `js/juegos.js`, que no toca el DOM
-ni sabe del cubo. Así `test/juegos.js` puede comprobar que **son jugables**, no sólo
-que no revientan: que la lluvia sólo va a más pero nunca por debajo de su suelo, que
-apagando color a color la pantalla se vacía siempre, que en el camino no salen dos
-baldosas iguales seguidas (si salieran, el niño giraría dos veces la misma cara sin
-saber si ha avanzado, y encima la segunda vuelta desharía la primera).
+cómo es el camino, a dónde va una pegatina al girar, a qué ritmo va la cosa— vive en
+`js/juegos.js`, que no toca el DOM ni sabe del cubo. Así `test/juegos.js` puede comprobar
+que **son jugables**, no sólo que no revientan: que la lluvia sólo va a más pero nunca por
+debajo de su suelo, que apagando color a color la pantalla se vacía siempre, que en el
+camino no salen dos baldosas iguales seguidas (si salieran, el niño giraría dos veces la
+misma cara sin saber si ha avanzado, y encima la segunda vuelta desharía la primera), y
+que la pregunta de la estrella **es una pregunta**: que la pegatina se mueve de verdad,
+que acaba a la vista y que los señuelos son de su mismo color.
+
+Seguir una pegatina se comprueba contra el motor de verdad: se pinta un cubo con 54
+valores distintos, se gira con `applyMove` y se mira dónde acabó cada uno. Si
+`destinoDePegatina` leyera la permutación al revés —que es el error fácil, porque
+`MOVE_PERM` está escrita como *"lo nuevo de aquí sale de lo viejo de allí"*— saltaría en
+el primer giro de los 972 que prueba.
 
 Escribiendo esas pruebas salió un fallo de verdad: la lluvia miraba el reloj para saber
 cuánto había bajado cada gota. El navegador **para los fotogramas** cuando la página no
@@ -620,7 +644,7 @@ js/f2l.js         los 41 F2L      (generado, no editar a mano)
 js/myalgs.js      tus algoritmos: guardar, validar y elegir
 js/lessons.js     contenido del tutorial
 js/patrones.js    los doce patrones
-js/juegos.js      las reglas del caminito y la lluvia de colores
+js/juegos.js      las reglas de los juegos de colores para peques
 js/stats.js       medias al estilo WCA
 js/sections.js    tutorial, cronómetro y entrenador
 js/app.js         pantallas y juegos

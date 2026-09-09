@@ -19,6 +19,7 @@ import { GUION, nuevaCaptura, anotar, volcado, hex } from './captura.js';
 import {
   caraAlAzar, ritmoLluvia, avanzarGotas, gotaQueSeApaga,
   caminoNuevo, largoDelCamino, LLUVIA,
+  destinoDePegatina, estrellaNueva, giroParaEstrella, senuelos, opcionesDeRonda, seVe,
 } from './juegos.js';
 import { t, idioma, fijarIdioma, IDIOMAS, traducirDOM, sinTraducir } from './i18n.js';
 import { enIOS } from './plataforma.js';
@@ -1660,6 +1661,172 @@ function gameCamino(nivel) {
 }
 
 // ------------------------------------------------------------
+//  JUEGO 7 — Sigue la estrella
+// ------------------------------------------------------------
+//  Se marca una pegatina con una estrella, el niño gira una cara y
+//  tiene que decir a dónde ha ido. Es la idea que le falta a quien
+//  empieza y la que más cuesta: las piezas no desaparecen ni cambian
+//  de color, se mueven enteras y van a un sitio que se puede seguir
+//  con el ojo. Quien entiende eso deja de girar al azar.
+//
+//  Los señuelos son SIEMPRE del mismo color que la respuesta. Si no,
+//  no habría nada que seguir: bastaría con buscar el único rojo de la
+//  pantalla y esto no enseñaría nada.
+
+function gameEstrella() {
+  let estrella = 0;          // la pegatina marcada
+  let pedido = null;         // el giro que se pide
+  let opciones = [];         // las pegatinas entre las que hay que elegir
+  let buena = -1;
+  let aciertos = 0;
+  let fase = 'gira';         // gira | adivina | entre rondas
+  let espera = null;
+  const mejorClave = 'estrella';
+
+  function marcador() {
+    setSteps(0, 0, t('⭐ Aciertos: {n}', { n: aciertos }));
+  }
+
+  /** Enseña la estrella y pide el giro que la mueve a la vista */
+  function pedirGiro() {
+    fase = 'gira';
+    pedido = giroParaEstrella(estrella);
+    if (!pedido) { nuevaRonda(); return; }
+    if (cube3d) {
+      cube3d.rotular({ [estrella]: '⭐' });
+      cube3d.highlight([estrella]);
+    }
+    clearMove(moveCard(pedido.face, pedido.amount));
+    marcador();
+  }
+
+  function nuevaRonda() {
+    clearTimeout(espera);
+    fase = 'gira';
+    for (let intento = 0; intento < 30; intento++) {
+      estrella = estrellaNueva();
+      if (giroParaEstrella(estrella)) break;
+    }
+    if (cube3d) cube3d.lookAt('F');
+    setFormula(null);
+    setBar(0);
+    pedirGiro();
+    $('#play-tip').innerHTML = t('Mira dónde está la <b>estrella</b> y gira esa cara. '
+      + 'Luego me dices a dónde ha ido.');
+    fx.say(t('Mira la estrella y gira la cara {cara}', { cara: colorFem(pedido.face) }));
+  }
+
+  /** Ya ha girado: se esconde la estrella y se pregunta */
+  function preguntar() {
+    fase = 'adivina';
+    buena = estrella;
+    opciones = [buena].concat(senuelos(app.state, buena, opcionesDeRonda(aciertos) - 1));
+    // barajar, que si no la buena sale siempre en el mismo sitio
+    for (let i = opciones.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [opciones[i], opciones[j]] = [opciones[j], opciones[i]];
+    }
+    if (cube3d) {
+      cube3d.rotular({});              // se apaga: ahora hay que saberlo
+      cube3d.highlight(opciones);
+    }
+    clearMove('<div class="move-text" style="text-align:center">'
+      + t('¿Dónde está ahora?<small>toca la pegatina</small>') + '</div>');
+    $('#play-tip').textContent = t('Toca en el cubo la pegatina donde ha ido la estrella.');
+    fx.say(t('¿Dónde está la estrella?'));
+  }
+
+  function acierto() {
+    fase = 'entre';
+    aciertos++;
+    if ((app.stars[mejorClave] || 0) < aciertos) { app.stars[mejorClave] = aciertos; save(); }
+    if (cube3d) {
+      cube3d.rotular({ [buena]: '⭐' });
+      cube3d.highlight([buena]);
+    }
+    marcador();
+    clearMove('<div class="move-text" style="text-align:center">'
+      + t('¡AHÍ ESTABA!<small>llevas {n}</small>', { n: aciertos }) + '</div>');
+    $('#play-tip').textContent = t('La has seguido con los ojos. Eso es lo difícil.');
+    fx.good();
+    fx.confetti(null, 40);
+    if (aciertos % 5 === 0) { fx.fanfare(); fx.confetti(null, 90); }
+    fx.say(t('¡Muy bien!'));
+    espera = setTimeout(() => { if (app.game === juego) nuevaRonda(); }, 1600);
+  }
+
+  function fallo(tocada) {
+    fase = 'entre';
+    if (cube3d) {
+      cube3d.rotular({ [buena]: '⭐', [tocada]: '❌' });
+      cube3d.highlight([buena]);
+    }
+    clearMove('<div class="move-text" style="text-align:center">'
+      + t('Estaba aquí<small>mira la estrella</small>') + '</div>');
+    $('#play-tip').textContent = t('No pasa nada: la pieza da la vuelta con la cara que gira.');
+    fx.oops();
+    fx.say(t('Estaba aquí'));
+    aciertos = 0;
+    marcador();
+    espera = setTimeout(() => { if (app.game === juego) nuevaRonda(); }, 2400);
+  }
+
+  const juego = {
+    get title() { return t('⭐ Sigue la estrella'); },
+    start() {
+      aciertos = 0;
+      if (cube3d) cube3d.setStickerTap((i) => juego.tocar(i));
+      const mejor = app.stars[mejorClave] || 0;
+      if (mejor) toast(t('Tu récord: {n} seguidas', { n: mejor }));
+      nuevaRonda();
+    },
+    stop() {
+      clearTimeout(espera);
+      if (!cube3d) return;
+      cube3d.setStickerTap(null);
+      cube3d.rotular({});
+      cube3d.highlight([]);
+    },
+    onMove(face, amount) {
+      if (fase !== 'gira') return;
+      const destino = destinoDePegatina(estrella, face, amount);
+      if (destino === estrella) {
+        // esa cara no lleva la estrella: no ha pasado nada, se vuelve a pedir
+        fx.oops();
+        $('#play-tip').innerHTML = t('Esa cara no lleva la estrella: se ha quedado donde estaba.');
+        pedirGiro();
+        return;
+      }
+      estrella = destino;
+      if (!seVe(estrella)) {
+        // se ha ido a una cara que no se ve; que la traiga de vuelta
+        fx.tone(320, 0.14, 'sine', 0.13);
+        $('#play-tip').innerHTML = t('¡Se ha ido por detrás! Gira otra vez para traerla.');
+        pedirGiro();
+        return;
+      }
+      preguntar();
+    },
+    onJump() { if (fase === 'gira') pedirGiro(); },
+    tocar(i) {
+      if (fase !== 'adivina' || !opciones.includes(i)) return;
+      if (i === buena) acierto(); else fallo(i);
+    },
+    hint() {
+      if (fase === 'gira') { sayMove(pedido.face, pedido.amount); return; }
+      if (fase !== 'adivina') return;
+      // la pista quita un señuelo, que enseñar la respuesta no es ayudar
+      const sobra = opciones.find((i) => i !== buena);
+      if (sobra === undefined) return;
+      opciones = opciones.filter((i) => i !== sobra);
+      if (cube3d) cube3d.highlight(opciones);
+      fx.say(t('Esa no era'));
+    },
+  };
+  return juego;
+}
+
+// ------------------------------------------------------------
 //  Motor de juegos
 // ------------------------------------------------------------
 function startGame(kind, arg, verify) {
@@ -1683,7 +1850,8 @@ function startGame(kind, arg, verify) {
             : kind === 'simon' ? gameSimon()
               : kind === 'lluvia' ? gameLluvia()
                 : kind === 'camino' ? gameCamino(arg)
-                  : gameSolve();
+                  : kind === 'estrella' ? gameEstrella()
+                    : gameSolve();
   $('#play-title').textContent = app.game.title;
   app.game.start();
 }

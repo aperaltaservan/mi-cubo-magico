@@ -12,7 +12,7 @@
 //  tienen las mismas ganas de correr.
 // ============================================================
 
-import { FACES } from './cube.js';
+import { FACES, MOVE_PERM } from './cube.js';
 
 /**
  * Una cara al azar, evitando las que ya estén en juego. Que caigan
@@ -120,4 +120,89 @@ export function caminoNuevo(largo, rnd = Math.random) {
     out.push(caraAlAzar(rnd, out.length ? [out[out.length - 1]] : []));
   }
   return out;
+}
+
+// ------------------------------------------------------------
+//  Sigue la estrella
+// ------------------------------------------------------------
+//  Se marca una pegatina y hay que decir a dónde ha ido después de
+//  girar. Es la idea que le falta a un niño que empieza y la que más
+//  cuesta: que las piezas no desaparecen ni cambian de color, que se
+//  mueven enteras y van a un sitio que se puede seguir con el ojo.
+//  Quien entiende eso deja de girar al azar.
+
+/** Las caras que se ven en la pantalla desde la vista de siempre */
+export const VISIBLES = ['U', 'F', 'R'];
+
+export function caraDe(i) { return FACES[(i / 9) | 0]; }
+export function seVe(i) { return VISIBLES.includes(caraDe(i)); }
+export function esCentro(i) { return i % 9 === 4; }
+
+/**
+ * Dónde acaba la pegatina `i` después de ese giro.
+ *
+ * MOVE_PERM está escrita como "lo nuevo de j sale de lo viejo de i", así
+ * que para seguir una pegatina hay que leerla al revés: buscar el hueco
+ * que se queda con lo que había en `i`.
+ */
+export function destinoDePegatina(i, face, amount = 1) {
+  const perm = MOVE_PERM[face];
+  if (!perm) return i;
+  let idx = i;
+  for (let k = 0; k < ((amount % 4) + 4) % 4; k++) idx = perm.indexOf(idx);
+  return idx;
+}
+
+/** Una pegatina para marcar: de las que se ven, y nunca un centro */
+export function estrellaNueva(rnd = Math.random) {
+  const sitios = [];
+  for (let i = 0; i < 54; i++) if (seVe(i) && !esCentro(i)) sitios.push(i);
+  return sitios[Math.min(sitios.length - 1, (rnd() * sitios.length) | 0)];
+}
+
+/**
+ * Un giro que mueva la estrella y la deje a la vista. Si la pregunta se
+ * pudiera contestar sin mirar —porque la pieza no se mueve, o porque se
+ * va detrás y no hay nada que señalar— no es una pregunta.
+ */
+export function giroParaEstrella(i, rnd = Math.random) {
+  const buenos = [];
+  for (const face of FACES) {
+    for (const amount of [1, 2, 3]) {
+      const destino = destinoDePegatina(i, face, amount);
+      if (destino !== i && seVe(destino) && !esCentro(destino)) buenos.push({ face, amount });
+    }
+  }
+  if (!buenos.length) return null;
+  return buenos[Math.min(buenos.length - 1, (rnd() * buenos.length) | 0)];
+}
+
+/**
+ * Los señuelos de la pregunta: pegatinas que se ven y que son **del
+ * mismo color** que la buena. Si fueran de otro color no habría nada que
+ * seguir, bastaría con buscar el único rojo de la pantalla. Si no hay
+ * bastantes de ese color se completan con las que sea, que peor es
+ * quedarse sin pregunta.
+ */
+export function senuelos(state, destino, cuantos = 2, rnd = Math.random) {
+  const mismos = [], otros = [];
+  for (let i = 0; i < 54; i++) {
+    if (i === destino || !seVe(i) || esCentro(i)) continue;
+    (state[i] === state[destino] ? mismos : otros).push(i);
+  }
+  const saca = (lista, n) => {
+    const copia = lista.slice();
+    const out = [];
+    while (out.length < n && copia.length) {
+      out.push(copia.splice(Math.min(copia.length - 1, (rnd() * copia.length) | 0), 1)[0]);
+    }
+    return out;
+  };
+  const elegidos = saca(mismos, cuantos);
+  return elegidos.concat(saca(otros, cuantos - elegidos.length));
+}
+
+/** Cuántas opciones tiene la pregunta: se van poniendo más con los aciertos */
+export function opcionesDeRonda(aciertos) {
+  return Math.min(4, 3 + Math.floor(Math.max(0, aciertos) / 5));
 }

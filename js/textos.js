@@ -152,6 +152,8 @@ export const EN = {
   'El mono dice': 'Monkey says',
   'El mono dice<small>Repite la secuencia · juego de memoria</small>':
     'Monkey says<small>Repeat the sequence · memory game</small>',
+  'Sigue la estrella<small>Gira y adivina a dónde ha ido la pegatina</small>':
+    'Follow the star<small>Turn, then guess where the sticker went</small>',
   'El caminito<small>Lleva al pollito girando la cara de cada baldosa</small>':
     'The little path<small>Walk the chick along by turning each tile’s face</small>',
   'Apaga los colores<small>Caen colores · gira esa cara antes de que lleguen al suelo</small>':
@@ -263,6 +265,31 @@ export const EN = {
   'Era la cara <b>{color}</b>. Tu récord: <b>{mejor}</b>':
     'It was the <b>{color}</b> face. Your record: <b>{mejor}</b>',
   'Tu récord: {n} giros seguidos': 'Your record: {n} turns in a row',
+
+  // ---------- Sigue la estrella ----------
+  '⭐ Sigue la estrella': '⭐ Follow the star',
+  '⭐ Aciertos: {n}': '⭐ Right so far: {n}',
+  'Mira dónde está la <b>estrella</b> y gira esa cara. Luego me dices a dónde ha ido.':
+    'Look at where the <b>star</b> is and turn that face. Then tell me where it went.',
+  'Mira la estrella y gira la cara {cara}': 'Look at the star and turn the {cara} face',
+  '¿Dónde está ahora?<small>toca la pegatina</small>':
+    'Where is it now?<small>tap the sticker</small>',
+  'Toca en el cubo la pegatina donde ha ido la estrella.':
+    'Tap the sticker on the cube where the star ended up.',
+  '¿Dónde está la estrella?': 'Where is the star?',
+  '¡AHÍ ESTABA!<small>llevas {n}</small>': 'THERE IT WAS!<small>{n} in a row</small>',
+  'La has seguido con los ojos. Eso es lo difícil.':
+    'You followed it with your eyes. That is the hard part.',
+  'Estaba aquí<small>mira la estrella</small>': 'It was here<small>look at the star</small>',
+  'Estaba aquí': 'It was here',
+  'No pasa nada: la pieza da la vuelta con la cara que gira.':
+    'Never mind: the piece travels round with the face you turn.',
+  'Tu récord: {n} seguidas': 'Your record: {n} in a row',
+  'Esa cara no lleva la estrella: se ha quedado donde estaba.':
+    'That face does not carry the star: it stayed where it was.',
+  '¡Se ha ido por detrás! Gira otra vez para traerla.':
+    'It has gone round the back! Turn again to bring it back.',
+  'Esa no era': 'That was not the one',
 
   // ---------- Apaga los colores ----------
   '🫧 Apaga los colores': '🫧 Switch the colours off',

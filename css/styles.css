@@ -102,6 +102,11 @@ p.lead { text-align: center; color: #cbbde0; margin: 0 0 18px; font-size: 1.02re
 .cubie-face.painted { box-shadow: inset 0 -6px 12px rgba(0, 0, 0, .22); }
 /* pegatina apagada: la ultima capa mientras entrenas F2L */
 .cubie-face.apagada { box-shadow: inset 0 0 14px rgba(0, 0, 0, .55); }
+/* un rotulo encima de una pegatina: la estrella que hay que seguir */
+.cubie-face.rotulo {
+  display: grid; place-items: center; font-size: 1.5rem; line-height: 1;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, .45);
+}
 .cubie-face.hi {
   outline: 4px solid #fff; outline-offset: -5px;
   animation: pulse .9s ease-in-out infinite alternate;

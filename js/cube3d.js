@@ -53,6 +53,8 @@ export class Cube3D {
     this.rotY = VIEWS.F[1];
     this.animating = false;
     this.apagar = null;       // funcion estado -> pegatinas que van apagadas
+    this.alTocar = null;      // aviso de "han tocado esta pegatina"
+    this.movido = false;      // ha habido arrastre: entonces no es un toque
     this._build();
     this._enableDrag();
   }
@@ -101,8 +103,18 @@ export class Cube3D {
       const g = stickerGeometry(i);
       const cubie = this.cubies.get(g.pos.join(','));
       const el = cubie.querySelector(`[data-n="${g.normal.join(',')}"]`);
+      el.dataset.i = i;                 // para saber cual han tocado
       this.stickerEls.push(el);
     }
+
+    // Un solo aviso para las 54: el clic dice de que pegatina viene. Y si
+    // venia de arrastrar para girar la camara no cuenta como toque, que
+    // si no no se podria mirar el cubo sin contestar sin querer.
+    this.root.addEventListener('click', (ev) => {
+      if (!this.alTocar || this.movido) return;
+      const i = ev.target && ev.target.dataset ? ev.target.dataset.i : undefined;
+      if (i !== undefined) this.alTocar(Number(i));
+    });
     this._applyView();
   }
 
@@ -116,10 +128,12 @@ export class Cube3D {
     const down = (e) => {
       const p = e.touches ? e.touches[0] : e;
       start = { x: p.clientX, y: p.clientY, rx: this.rotX, ry: this.rotY };
+      this.movido = false;
     };
     const move = (e) => {
       if (!start) return;
       const p = e.touches ? e.touches[0] : e;
+      if (Math.abs(p.clientX - start.x) + Math.abs(p.clientY - start.y) > 6) this.movido = true;
       this.rotY = start.ry + (p.clientX - start.x) * 0.45;
       this.rotX = Math.max(-89, Math.min(89, start.rx - (p.clientY - start.y) * 0.45));
       this.root.style.transition = 'none';
@@ -172,6 +186,26 @@ export class Cube3D {
       this.stickerEls[i].style.background = off ? APAGADO : (this.colors[state[i]] || '#333');
       this.stickerEls[i].classList.add('painted');
       this.stickerEls[i].classList.toggle('apagada', off);
+    }
+  }
+
+  /** Avisa de la pegatina que se toca. Con null se deja de avisar. */
+  setStickerTap(fn) { this.alTocar = fn || null; }
+
+  /**
+   * Pone un rótulo encima de unas pegatinas: `{12: '⭐', 30: '1'}`.
+   * Borra siempre los anteriores, así que con `{}` se queda limpio.
+   */
+  rotular(mapa) {
+    for (const el of this.stickerEls) {
+      if (el.textContent) el.textContent = '';
+      el.classList.remove('rotulo');
+    }
+    for (const clave of Object.keys(mapa || {})) {
+      const el = this.stickerEls[Number(clave)];
+      if (!el) continue;
+      el.textContent = mapa[clave];
+      el.classList.add('rotulo');
     }
   }
 
