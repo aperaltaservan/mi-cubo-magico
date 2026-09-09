@@ -1448,6 +1448,20 @@ function refreshDiag() {
 //  aviso, lo lanza; si no, explica dónde está la opción. Así no depende
 //  de una condición que cambia con cada versión de cada navegador.
 
+/**
+ * Guarda la app para poder usarla sin conexión. Es lo que la hace
+ * servir de verdad en un móvil: el cronómetro y las lecciones
+ * funcionan en el coche o donde no haya cobertura.
+ *
+ * Todo el cuidado está en sw.js. Aquí sólo se registra, y si algo
+ * falla se sigue como siempre: no funcionar sin conexión no es
+ * motivo para dejar de funcionar con ella.
+ */
+function registrarServiceWorker() {
+  if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+  navigator.serviceWorker.register('/sw.js').catch(() => { /* da igual */ });
+}
+
 let avisoInstalar = null;
 
 /** ¿Ya está instalada, o sea, abierta desde la pantalla de inicio? */
@@ -1677,6 +1691,7 @@ function boot() {
   }
 
   prepararInstalacion();
+  registrarServiceWorker();
 
   $('#ios-sincubo').onclick = () => { fx.click(); $('#btn-nocube').click(); };
   $('#ios-url').textContent = location.href.replace(/^https?:\/\//, '');

@@ -51,19 +51,28 @@ const TYPES = {
 // ------------------------------------------------------------
 //  Huella del código
 // ------------------------------------------------------------
-/** Calcula una huella corta del contenido de la app */
-async function calcularHuella() {
-  const h = createHash('sha1');
-  for (const carpeta of ['js', 'css', 'icons']) {
+const CARPETAS = ['js', 'css', 'icons'];
+const SUELTOS = ['index.html', 'manifest.webmanifest', 'sw.js'];
+
+/** Todo lo que se sirve, en orden estable */
+async function ficheros() {
+  const lista = [];
+  for (const carpeta of CARPETAS) {
     let nombres;
     try { nombres = (await readdir(join(ROOT, carpeta))).sort(); }
     catch (e) { continue; }
-    for (const n of nombres) {
-      h.update(n);
-      h.update(await readFile(join(ROOT, carpeta, n)));
-    }
+    for (const n of nombres) lista.push(carpeta + '/' + n);
   }
-  h.update(await readFile(join(ROOT, 'index.html')));
+  return lista;
+}
+
+/** Calcula una huella corta del contenido de la app */
+async function calcularHuella() {
+  const h = createHash('sha1');
+  for (const ruta of [...await ficheros(), ...SUELTOS]) {
+    h.update(ruta);
+    h.update(await readFile(join(ROOT, ruta)));
+  }
   return h.digest('hex').slice(0, 12);
 }
 
@@ -101,6 +110,23 @@ async function manifiesto() {
   return Buffer.from(txt.replaceAll('"/icons/', '"' + prefijo() + '/icons/'), 'utf8');
 }
 
+/**
+ * El service worker, con la huella y la lista de ficheros de esta
+ * versión metidas dentro. Va servido desde la raíz porque el alcance
+ * de un service worker es la carpeta desde la que se sirve, y éste
+ * tiene que mandar sobre toda la página.
+ */
+async function serviceWorker() {
+  if (!EN_SERVIDOR) HUELLA = await calcularHuella();
+  const p = prefijo();
+  const recursos = ['/', p + '/manifest.webmanifest',
+    ...(await ficheros()).map((f) => p + '/' + f)];
+  const txt = await readFile(join(ROOT, 'sw.js'), 'utf8');
+  return Buffer.from(txt
+    .replace('__HUELLA__', HUELLA)
+    .replace('__RECURSOS__', JSON.stringify(recursos)), 'utf8');
+}
+
 const servidor = createServer(async (req, res) => {
   // Sonda de salud: la usan Docker y Dokploy para saber si esto vive.
   // Dice también qué versión está sirviendo, que es la forma rápida de
@@ -121,6 +147,21 @@ const servidor = createServer(async (req, res) => {
       res.writeHead(200, {
         'Content-Type': TYPES['.html'],
         'Cache-Control': 'no-store, must-revalidate',
+        'Content-Length': body.length,
+        'X-Content-Type-Options': 'nosniff',
+      });
+      res.end(req.method === 'HEAD' ? undefined : body);
+      return;
+    }
+
+    // El service worker manda sobre toda la página, así que va desde
+    // la raíz y sin versión en la dirección: el navegador lo revalida
+    // solo, y lo que cambia dentro es la huella que lleva escrita.
+    if (path === '/sw.js') {
+      const body = await serviceWorker();
+      res.writeHead(200, {
+        'Content-Type': TYPES['.js'],
+        'Cache-Control': 'no-cache',
         'Content-Length': body.length,
         'X-Content-Type-Options': 'nosniff',
       });

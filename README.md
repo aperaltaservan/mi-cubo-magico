@@ -312,6 +312,34 @@ morado de la app, ocupando el 62% del ancho para caber en la zona segura de los 
 
 ---
 
+## Sin conexión
+
+Una vez abierta, la app se guarda entera y funciona sin internet: el tutorial, el
+cronómetro, los patrones y el entrenador van igual en el metro o en el coche. Lo lleva
+`sw.js`, y son **dos reglas y sólo dos**:
+
+- **La portada va siempre a la red primero.** Es la que reparte las direcciones nuevas
+  tras un despliegue, así que no puede quedarse vieja teniendo conexión. Sin conexión se
+  saca la copia guardada.
+- **Lo versionado (`/v/…`) sale de la caché sin preguntar.** Su dirección lleva dentro
+  una huella de su contenido, así que lo guardado *no puede* estar viejo: si el contenido
+  cambiara, la dirección sería otra.
+
+Esa segunda regla es la que hace que esto sea seguro. Un service worker mal hecho deja a
+la gente con código viejo y no hay forma de sacarla de ahí, y no puedes pedirle una
+recarga forzada a alguien que está en el metro con su hijo y un cubo. Aquí no puede
+pasar, porque nada se guarda bajo una dirección que pueda significar dos cosas distintas.
+Al activarse borra las cachés de versiones anteriores, así que no se acumula basura.
+
+`test/sw.js` no simula un navegador: **ejecuta el `sw.js` de verdad** dentro de un entorno
+fingido (`caches`, `fetch`, `self`) y le pregunta lo que importa — que la portada vaya a
+la red aun teniendo copia, que sin conexión saque la copia, que lo versionado no toque la
+red, y que al activarse limpie lo viejo. Escribiéndolo salió un fallo real: el guardado
+iba sin `waitUntil`, así que el navegador podía matar al worker a mitad de escritura y
+dejar sin guardar lo que creíamos guardado.
+
+---
+
 ## Si algo no va
 
 | Problema | Qué hacer |

@@ -9,7 +9,7 @@ WORKDIR /app
 
 # Solo lo que hace falta para servir la app. Las pruebas y los scripts de
 # desarrollo se quedan fuera (ver .dockerignore).
-COPY --chown=node:node package.json server.js index.html manifest.webmanifest ./
+COPY --chown=node:node package.json server.js index.html manifest.webmanifest sw.js ./
 COPY --chown=node:node css/ ./css/
 COPY --chown=node:node js/ ./js/
 COPY --chown=node:node icons/ ./icons/

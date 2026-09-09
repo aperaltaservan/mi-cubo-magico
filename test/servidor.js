@@ -145,6 +145,30 @@ try {
     'el icono de iOS mide 180');
 
   // ------------------------------------------------------------
+  seccion('el service worker, para funcionar sin conexión');
+  const sw = await fetch(base + '/sw.js');
+  ok(sw.status === 200, 'el service worker tiene que servirse desde la raíz');
+  ok((sw.headers.get('content-type') || '').includes('javascript'),
+    'con tipo javascript, o el navegador lo rechaza');
+  ok(!/immutable/.test(sw.headers.get('cache-control') || ''),
+    'y sin prometer que es inmutable: es lo que trae las versiones nuevas');
+  const fuente = await sw.text();
+  ok(!fuente.includes('__HUELLA__') && !fuente.includes('__RECURSOS__'),
+    'no puede quedar ningún hueco de la plantilla sin rellenar');
+  ok(fuente.includes(salud.version), 'tiene que llevar dentro la versión de ahora');
+  const lista = JSON.parse(fuente.match(/const RECURSOS = (\[.*?\]);/s)[1]);
+  ok(lista.includes('/'), 'la portada tiene que guardarse, o no arranca sin conexión');
+  ok(lista.every((r) => r === '/' || r.startsWith('/v/' + salud.version)),
+    'todo lo demás va versionado, que es lo que hace seguro cachearlo');
+  ok(lista.some((r) => r.endsWith('/js/app.js')), 'y el código, claro');
+  ok(lista.some((r) => r.endsWith('/css/styles.css')), 'y los estilos');
+  // lo que promete guardar tiene que existir de verdad
+  for (const ruta of lista) {
+    const r = await fetch(base + ruta, { method: 'HEAD' });
+    ok(r.status === 200, 'promete guardar ' + ruta + ' pero da ' + r.status);
+  }
+
+  // ------------------------------------------------------------
   seccion('sólo se sirve la app');
   // fetch() normaliza los '..' antes de enviar, así que para probar de
   // verdad la travesía hay que hablar por el socket a pelo.
