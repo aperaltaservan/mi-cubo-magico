@@ -224,6 +224,14 @@
       <span class="emoji">🎈</span>
       <span data-i18n>Conoce tu cubo<small>Gira caras y aprende sus colores</small></span>
     </button>
+    <button class="btn" data-game="camino">
+      <span class="emoji">🐥</span>
+      <span data-i18n>El caminito<small>Lleva al pollito girando la cara de cada baldosa</small></span>
+    </button>
+    <button class="btn" data-game="lluvia">
+      <span class="emoji">🫧</span>
+      <span data-i18n>Apaga los colores<small>Caen colores · gira esa cara antes de que lleguen al suelo</small></span>
+    </button>
     <button class="btn blue" data-game="undo">
       <span class="emoji">🔙</span>
       <span data-i18n>Deshaz la mezcla<small>Del 1 al 8 · el juego para empezar</small></span>
@@ -237,7 +245,8 @@
       <span data-i18n>Resuélvelo conmigo<small>El método completo, paso a paso</small></span>
     </button>
     <div class="spacer"></div>
-    <p class="note" data-i18n>Con 4 años, empieza por <b>Deshaz la mezcla</b> y <b>El mono dice</b>.</p>
+    <p class="note" data-i18n>Con 4 años, empieza por <b>El caminito</b>, que no tiene prisa, y sigue
+    con <b>Deshaz la mezcla</b> y <b>El mono dice</b>.</p>
   </section>
 
   <!-- ============ TUTORIAL ============ -->
@@ -405,6 +414,8 @@
     </div>
 
     <div id="scene" class="scene"></div>
+    <!-- tablero de los juegos de colores; los demas juegos usan el cubo -->
+    <div id="play-lienzo" class="lienzo hidden"></div>
 
     <div class="instr">
       <div class="phase" id="play-phase"></div>

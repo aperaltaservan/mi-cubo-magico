@@ -394,6 +394,47 @@ p.lead { text-align: center; color: #cbbde0; margin: 0 0 18px; font-size: 1.02re
 #pie a:hover svg { color: #fff; }
 #pie .sep { opacity: .4; }
 
+/* ---------- juegos de colores: la lluvia y el caminito ---------- */
+.lienzo { margin: 4px 0 10px; }
+
+.lluvia {
+  position: relative; height: 300px; overflow: hidden;
+  border-radius: var(--radius); border: 2px solid rgba(255, 255, 255, .12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(0, 0, 0, .25));
+  transition: background .18s ease;
+}
+.lluvia.fallo { background: rgba(255, 123, 123, .28); }
+.lluvia .suelo {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .35), rgba(255, 255, 255, .1));
+}
+.lluvia .gota {
+  position: absolute; top: 10px; width: 54px; height: 54px; margin-left: -27px;
+  border-radius: 50%; border: 3px solid rgba(255, 255, 255, .4); will-change: transform;
+}
+/* el brillito: sin él una bola de color plano no parece una luz encendida */
+.lluvia .gota::after {
+  content: ''; position: absolute; left: 20%; top: 13%; width: 28%; height: 21%;
+  border-radius: 50%; background: rgba(255, 255, 255, .6);
+}
+.lluvia .gota.pista { animation: pulse .5s ease-in-out infinite alternate; }
+
+@media (max-width: 380px) { .lluvia { height: 250px; } }
+
+.camino { display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px; }
+.camino .baldosa {
+  aspect-ratio: 1; border-radius: 14px; display: grid; place-items: center;
+  font-size: 1.5rem; line-height: 1; border: 3px solid rgba(255, 255, 255, .18);
+  background: rgba(255, 255, 255, .1);
+  transition: transform .2s ease, opacity .3s ease, box-shadow .3s ease;
+}
+.camino .hecha { opacity: .38; }
+.camino .toca { box-shadow: inset 0 0 0 3px #fff; animation: baldosa 0.9s ease-in-out infinite alternate; }
+@keyframes baldosa { to { transform: scale(1.11); } }
+.camino .aqui { transform: scale(1.12); box-shadow: 0 8px 18px rgba(0, 0, 0, .4); }
+.camino .salta { animation: salto .42s ease; }
+@keyframes salto { 50% { transform: translateY(-15px) scale(1.28); } }
+
 /* ---------- miniatura del cubo desplegado ---------- */
 .net { display: grid; gap: 1px; }
 .net i { border-radius: 1px; }

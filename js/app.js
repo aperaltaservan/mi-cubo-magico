@@ -15,6 +15,10 @@ import { fx } from './fx.js';
 import { lessonById, LESSONS } from './lessons.js';
 import { PATRONES, patronPorId } from './patrones.js';
 import { giroDeTecla, escribiendo, construirPad } from './entrada.js';
+import {
+  caraAlAzar, ritmoLluvia, avanzarGotas, gotaQueSeApaga,
+  caminoNuevo, largoDelCamino, LLUVIA,
+} from './juegos.js';
 import { t, idioma, fijarIdioma, IDIOMAS, traducirDOM, sinTraducir } from './i18n.js';
 import { enIOS } from './plataforma.js';
 import * as sections from './sections.js';
@@ -1370,6 +1374,287 @@ function gameSimon() {
 }
 
 // ------------------------------------------------------------
+//  JUEGO 5 — Apaga los colores
+// ------------------------------------------------------------
+//  Caen luces de colores y hay que apagarlas girando esa cara antes
+//  de que toquen el suelo. Es lo mas sencillo que se puede pedir con
+//  un cubo delante: ver un color y encontrar su cara. Ni notacion ni
+//  sentido de giro; vale cualquier vuelta. Y quien todavia no lee se
+//  entera igual, porque el color de la que va primera se dice en voz
+//  alta en cuanto cambia.
+
+/** Pone el tablero de un juego de colores en lugar del cubo 3D */
+function usarLienzo(html) {
+  $('#scene').classList.add('hidden');
+  const box = $('#play-lienzo');
+  box.classList.remove('hidden');
+  box.innerHTML = html;
+  return box.firstElementChild;
+}
+
+const CARRILES = 4;
+
+function gameLluvia() {
+  let gotas = [];              // { face, y, nacida, caida, carril, el }
+  let apagadas = 0;
+  let vidas = LLUVIA.vidas;
+  let fin = false;
+  let raf = 0, espera = 0, ultimo = 0;
+  let dicha = null;            // el color que ya se ha dicho en voz alta
+  let campo = null;
+
+  // el recorrido de caida: el alto del campo menos la gota y el suelo
+  const alto = () => Math.max(90, campo.clientHeight - 78);
+
+  function hud() {
+    setSteps(0, 0, t('🫧 Apagados: {n}', { n: apagadas })
+      + ' · ' + '💛'.repeat(vidas) + '🖤'.repeat(LLUVIA.vidas - vidas));
+  }
+
+  /** La gota que va mas abajo: la que hay que mirar */
+  function primera() {
+    let g0 = null;
+    for (const g of gotas) if (!g0 || g.y > g0.y) g0 = g;
+    return g0;
+  }
+
+  function nace() {
+    const face = caraAlAzar(Math.random, gotas.map((g) => g.face));
+    const libres = [];
+    for (let c = 0; c < CARRILES; c++) if (!gotas.some((g) => g.carril === c)) libres.push(c);
+    const carril = libres.length ? libres[(Math.random() * libres.length) | 0] : 0;
+    const el = document.createElement('i');
+    el.className = 'gota';
+    el.style.left = (13 + carril * 24.7) + '%';
+    el.style.background = hexOf(face);
+    el.style.boxShadow = '0 0 22px ' + hexOf(face);
+    campo.appendChild(el);
+    gotas.push({ face, y: 0, caida: ritmoLluvia(apagadas).caida, carril, el });
+  }
+
+  /** La saca del juego: apagada de un giro (crece) o caida al suelo (se aplasta) */
+  function quita(g, apagada) {
+    gotas = gotas.filter((x) => x !== g);
+    g.el.style.transition = 'transform .3s ease, opacity .3s ease, filter .3s ease';
+    g.el.style.transform = `translateY(${(g.y * alto()).toFixed(1)}px) `
+      + (apagada ? 'scale(1.9)' : 'scale(.45)');
+    g.el.style.opacity = '0';
+    g.el.style.filter = 'brightness(.25)';
+    setTimeout(() => g.el.remove(), 340);
+  }
+
+  function parpadeo() {
+    campo.classList.add('fallo');
+    setTimeout(() => campo.classList.remove('fallo'), 210);
+  }
+
+  function toca(g) {
+    quita(g, false);
+    vidas--;
+    dicha = null;
+    fx.oops();
+    parpadeo();
+    hud();
+    if (vidas <= 0) acabar();
+  }
+
+  function acabar() {
+    fin = true;
+    cancelAnimationFrame(raf);
+    const mejor = app.stars.lluvia || 0;
+    award('lluvia', apagadas);
+    clearMove('<div class="move-text" style="text-align:center">'
+      + t('¡Se han caído!<small>has apagado {n}</small>', { n: apagadas }) + '</div>');
+    setBar(0);
+    if (apagadas > mejor) {
+      $('#play-tip').innerHTML = t('¡Récord nuevo! 🎉');
+      fx.fanfare();
+      fx.confetti();
+      fx.say(t('¡Récord!'));
+    } else {
+      $('#play-tip').innerHTML = t('Tu récord: <b>{n}</b>', { n: mejor });
+      fx.say(t('Se han caído. Otra vez'));
+    }
+    $('#play-action').classList.remove('hidden');
+    $('#play-action').textContent = t('🔁 Otra vez');
+    $('#play-action').onclick = () => { fx.click(); startGame('lluvia'); };
+  }
+
+  function paso(ahora) {
+    if (fin) return;
+    // se avanza por lo que ha durado el fotograma, y con tope: mirar el
+    // reloj haría que una pausa del navegador tirase todas las gotas de
+    // golpe. Ese recorte vive en juegos.js, con su prueba
+    const dt = ultimo ? ahora - ultimo : 16;
+    ultimo = ahora;
+    const h = alto();
+    const caidas = avanzarGotas(gotas, dt);
+    for (const g of gotas) g.el.style.transform = `translateY(${(g.y * h).toFixed(1)}px)`;
+    for (const g of caidas) toca(g);
+    if (fin) return;
+    const g0 = primera();
+    setBar(g0 ? g0.y * 100 : 0);
+    // el color se dice sólo cuando cambia el que va primero: dicho en cada
+    // gota, la voz acabaria yendo por detras del juego
+    if (!g0) dicha = null;
+    else if (g0.face !== dicha) { dicha = g0.face; fx.say(colorFem(g0.face)); }
+
+    espera -= Math.min(LLUVIA.topeFotograma, dt);
+    if (espera <= 0 && gotas.length < LLUVIA.aLaVez) {
+      nace();
+      espera = ritmoLluvia(apagadas).espera;
+    }
+    raf = requestAnimationFrame(paso);
+  }
+
+  return {
+    get title() { return t('🫧 Apaga los colores'); },
+    start() {
+      campo = usarLienzo('<div class="lluvia"><div class="suelo"></div></div>');
+      gotas = []; apagadas = 0; vidas = LLUVIA.vidas; fin = false; dicha = null;
+      setFormula(null);
+      setBar(0);
+      hud();
+      clearMove('<div class="move-text" style="text-align:center">'
+        + t('¡A apagar!<small>gira la cara del color que cae</small>') + '</div>');
+      $('#play-tip').innerHTML = t('Cuando caiga un color, <b>gira esa cara</b>. ¡Para donde quieras!');
+      const mejor = app.stars.lluvia || 0;
+      if (mejor) toast(t('Tu récord: {n} apagados', { n: mejor }));
+      fx.say(t('Gira la cara del color que cae'));
+      espera = 700;
+      ultimo = 0;
+      raf = requestAnimationFrame(paso);
+    },
+    stop() { fin = true; cancelAnimationFrame(raf); },
+    onMove(face) {
+      if (fin) return;
+      const i = gotaQueSeApaga(gotas, face);
+      if (i < 0) { fx.oops(); parpadeo(); return; }
+      quita(gotas[i], true);
+      apagadas++;
+      dicha = null;
+      fx.tone(560 + Math.min(apagadas, 20) * 30, 0.1, 'sine', 0.16);
+      if (apagadas % 10 === 0) { fx.good(); fx.confetti(null, 40); }
+      hud();
+    },
+    onJump() { /* varios giros de golpe: no se sabe cual era, se deja pasar */ },
+    hint() {
+      const g0 = primera();
+      if (!g0) return;
+      g0.el.classList.add('pista');
+      setTimeout(() => g0.el.classList.remove('pista'), 1400);
+      $('#play-tip').innerHTML = t('Gira la cara <b>{color}</b>',
+        { color: colorFem(g0.face).toUpperCase() });
+      fx.say(t('Cara {cara}', { cara: colorFem(g0.face) }));
+    },
+  };
+}
+
+// ------------------------------------------------------------
+//  JUEGO 6 — El caminito
+// ------------------------------------------------------------
+//  Lo mismo que la lluvia (ver un color, encontrar su cara) pero sin
+//  reloj: el pollito avanza una baldosa por cada cara acertada y no
+//  pasa nada por tardar. A los cuatro anos no todos los dias se tienen
+//  las mismas ganas de correr.
+
+function gameCamino(nivel) {
+  const n = Math.max(0, nivel | 0);
+  const camino = caminoNuevo(largoDelCamino(n));
+  let en = 0;             // en que baldosa esta el pollito (la 0 es la casa)
+  let seguidos = 0;       // fallos seguidos, para ayudar sin que lo pida
+  let campo = null;
+
+  const color = (i) => colorFem(camino[i]).toUpperCase();
+
+  function pintar(salta) {
+    const celdas = [];
+    for (let i = 0; i <= camino.length; i++) {
+      const clases = ['baldosa'];
+      if (i < en) clases.push('hecha');
+      if (i === en) clases.push('aqui');
+      if (i === en && salta) clases.push('salta');
+      if (i === en + 1) clases.push('toca');
+      const fondo = i === 0 ? '' : 'background:' + hexOf(camino[i - 1]);
+      const dentro = i === en ? '🐥' : i === 0 ? '🏠' : i === camino.length ? '🎁' : '';
+      celdas.push(`<i class="${clases.join(' ')}" style="${fondo}">${dentro}</i>`);
+    }
+    campo.innerHTML = celdas.join('');
+  }
+
+  function marcador() {
+    setSteps(0, 0, t('🐥 Baldosa {i} de {n}', { i: en, n: camino.length }));
+    setBar(en / camino.length * 100);
+    // la tarjeta grande enseña el color que toca: quien no lee necesita
+    // una mancha de color, no una frase
+    if (en < camino.length) {
+      clearMove(`<div class="face-chip" style="background:${hexOf(camino[en])}"></div>`
+        + `<div class="move-text">${t('Cara {cara}', { cara: color(en) })}`
+        + `<small>${t('gira esa cara')}</small></div>`);
+    }
+  }
+
+  function ganar() {
+    const mejor = app.stars.camino || 0;
+    award('camino', camino.length);
+    clearMove('<div class="move-text" style="text-align:center">'
+      + t('¡HA LLEGADO!<small>{n} baldosas</small>', { n: camino.length }) + '</div>');
+    $('#play-tip').textContent = t('El pollito ha llegado a su regalo 🎁');
+    fx.fanfare();
+    fx.confetti();
+    fx.say(camino.length > mejor ? t('¡Récord! El pollito ha llegado')
+      : t('¡Muy bien! El pollito ha llegado'));
+    $('#play-action').classList.remove('hidden');
+    $('#play-action').textContent = t('➡️ Otro camino');
+    $('#play-action').onclick = () => { fx.click(); startGame('camino', n + 1); };
+  }
+
+  return {
+    get title() { return t('🐥 El caminito'); },
+    start() {
+      campo = usarLienzo('<div class="camino"></div>');
+      pintar(false);
+      setFormula(null);
+      marcador();
+      $('#play-tip').innerHTML = t('Gira la cara <b>{color}</b> y el pollito salta a esa baldosa',
+        { color: color(0) });
+      const mejor = app.stars.camino || 0;
+      if (mejor) toast(t('Tu mejor camino: {n} baldosas', { n: mejor }));
+      fx.say(t('Cara {cara}', { cara: colorFem(camino[0]) }));
+    },
+    onMove(face) {
+      if (en >= camino.length) return;
+      if (face !== camino[en]) {
+        seguidos++;
+        fx.oops();
+        $('#play-tip').innerHTML = t('Esa no. Busca la baldosa <b>{color}</b>', { color: color(en) });
+        if (seguidos >= 2) this.hint();
+        return;
+      }
+      seguidos = 0;
+      en++;
+      fx.tone(500 + en * 45, 0.1, 'sine', 0.16);
+      pintar(true);
+      marcador();
+      if (en >= camino.length) { ganar(); return; }
+      $('#play-tip').innerHTML = t('¡Bien! Ahora la <b>{color}</b>', { color: color(en) });
+      fx.say(colorFem(camino[en]));
+    },
+    onJump() { /* varios giros de golpe: no se sabe cual era, se deja pasar */ },
+    hint() {
+      if (en >= camino.length) return;
+      $('#play-tip').innerHTML = t('Gira la cara <b>{color}</b>', { color: color(en) });
+      fx.say(t('Cara {cara}', { cara: colorFem(camino[en]) }));
+      // y se le senala la baldosa, por si todavia no lee
+      const b = campo.children[en + 1];
+      if (!b) return;
+      b.classList.add('salta');
+      setTimeout(() => b.classList.remove('salta'), 460);
+    },
+  };
+}
+
+// ------------------------------------------------------------
 //  Motor de juegos
 // ------------------------------------------------------------
 function startGame(kind, arg, verify) {
@@ -1381,13 +1666,19 @@ function startGame(kind, arg, verify) {
   $('#play-action').classList.add('hidden');
   $('#play-action2').classList.add('hidden');
   $('#play-formula').innerHTML = '';
+  // el tablero de colores lo pide quien lo necesita; los demas, el cubo
+  $('#scene').classList.remove('hidden');
+  $('#play-lienzo').classList.add('hidden');
+  $('#play-lienzo').innerHTML = '';
   app.game = kind === 'explore' ? gameExplore(verify)
     : kind === 'undo' ? gameUndo(arg)
       : kind === 'curso' ? gameCurso(arg)
         : kind === 'patron' ? gamePatron(arg)
           : kind === 'deshacer-patron' ? gameDeshacerPatron(arg)
             : kind === 'simon' ? gameSimon()
-              : gameSolve();
+              : kind === 'lluvia' ? gameLluvia()
+                : kind === 'camino' ? gameCamino(arg)
+                  : gameSolve();
   $('#play-title').textContent = app.game.title;
   app.game.start();
 }

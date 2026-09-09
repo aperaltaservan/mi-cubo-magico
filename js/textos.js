@@ -152,11 +152,15 @@ export const EN = {
   'El mono dice': 'Monkey says',
   'El mono dice<small>Repite la secuencia · juego de memoria</small>':
     'Monkey says<small>Repeat the sequence · memory game</small>',
+  'El caminito<small>Lleva al pollito girando la cara de cada baldosa</small>':
+    'The little path<small>Walk the chick along by turning each tile’s face</small>',
+  'Apaga los colores<small>Caen colores · gira esa cara antes de que lleguen al suelo</small>':
+    'Switch the colours off<small>Colours fall · turn that face before they hit the floor</small>',
   'Resuélvelo conmigo': 'Solve it with me',
   'Resuélvelo conmigo<small>El método completo, paso a paso</small>':
     'Solve it with me<small>The whole method, step by step</small>',
-  'Con 4 años, empieza por <b>Deshaz la mezcla</b> y <b>El mono dice</b>.':
-    'For a four-year-old, start with <b>Undo the scramble</b> and <b>Monkey says</b>.',
+  'Con 4 años, empieza por <b>El caminito</b>, que no tiene prisa, y sigue con <b>Deshaz la mezcla</b> y <b>El mono dice</b>.':
+    'For a four-year-old, start with <b>The little path</b>, which is in no hurry, then go on to <b>Undo the scramble</b> and <b>Monkey says</b>.',
   'Elige cuántos movimientos quieres deshacer': 'Choose how many moves you want to undo',
   'Empieza por el 1. Cuando lo consigas se abre el siguiente.':
     'Start at 1. Each one you beat opens the next.',
@@ -259,6 +263,38 @@ export const EN = {
   'Era la cara <b>{color}</b>. Tu récord: <b>{mejor}</b>':
     'It was the <b>{color}</b> face. Your record: <b>{mejor}</b>',
   'Tu récord: {n} giros seguidos': 'Your record: {n} turns in a row',
+
+  // ---------- Apaga los colores ----------
+  '🫧 Apaga los colores': '🫧 Switch the colours off',
+  '🫧 Apagados: {n}': '🫧 Switched off: {n}',
+  '¡A apagar!<small>gira la cara del color que cae</small>':
+    'Lights out!<small>turn the face of the colour that is falling</small>',
+  'Cuando caiga un color, <b>gira esa cara</b>. ¡Para donde quieras!':
+    'When a colour falls, <b>turn that face</b>. Either way round!',
+  'Gira la cara del color que cae': 'Turn the face of the colour that is falling',
+  'Gira la cara <b>{color}</b>': 'Turn the <b>{color}</b> face',
+  'Tu récord: {n} apagados': 'Your record: {n} switched off',
+  '¡Se han caído!<small>has apagado {n}</small>':
+    'They fell!<small>you switched {n} off</small>',
+  '¡Récord nuevo! 🎉': 'A new record! 🎉',
+  '¡Récord!': 'A record!',
+  'Tu récord: <b>{n}</b>': 'Your record: <b>{n}</b>',
+  'Se han caído. Otra vez': 'They fell. Try again',
+
+  // ---------- El caminito ----------
+  '🐥 El caminito': '🐥 The little path',
+  '🐥 Baldosa {i} de {n}': '🐥 Tile {i} of {n}',
+  'gira esa cara': 'turn that face',
+  'Gira la cara <b>{color}</b> y el pollito salta a esa baldosa':
+    'Turn the <b>{color}</b> face and the chick hops onto that tile',
+  'Tu mejor camino: {n} baldosas': 'Your longest path: {n} tiles',
+  'Esa no. Busca la baldosa <b>{color}</b>': 'Not that one. Look for the <b>{color}</b> tile',
+  '¡Bien! Ahora la <b>{color}</b>': 'Nice! Now the <b>{color}</b> one',
+  '¡HA LLEGADO!<small>{n} baldosas</small>': 'IT MADE IT!<small>{n} tiles</small>',
+  'El pollito ha llegado a su regalo 🎁': 'The chick has reached its present 🎁',
+  '¡Récord! El pollito ha llegado': 'A record! The chick made it',
+  '¡Muy bien! El pollito ha llegado': 'Well done! The chick made it',
+  '➡️ Otro camino': '➡️ Another path',
 
   // ---------- Patrones ----------
   'Dibujos que puedes hacer con el cubo. Te guío giro a giro.':

@@ -49,7 +49,7 @@ la app se entera y sigue desde donde esté. Si se desconecta y vuelve, tampoco p
 
 | | Sección | Para quién |
 |---|---|---|
-| 👶 | **Para peques** | Tres juegos para empezar de cero |
+| 👶 | **Para peques** | Cinco juegos para empezar de cero |
 | 📚 | **Aprender a resolverlo** | Tutorial del método principiante, lección a lección |
 | 🎨 | **Patrones** | Dibujos con el cubo, guiados giro a giro |
 | ⏱️ | **Cronómetro** | Mezclas y medias al estilo WCA |
@@ -63,6 +63,31 @@ la app se entera y sigue desde donde esté. Si se desconecta y vuelve, tampoco p
 Juego libre. El niño gira lo que quiera y la app le dice el color: *"cara verde"*.
 Gana una estrella cuando encuentra los seis colores. Es el primer paso: aprender que
 el cubo tiene caras y que cada una tiene su color.
+
+### 🐥 El caminito
+Un camino de **baldosas de colores** y un pollito que quiere llegar a su regalo. La
+baldosa que toca parpadea: el niño **gira la cara de ese color** y el pollito salta a
+ella. Sin reloj y sin fallar: si se equivoca, la app le dice qué color busca, y a la
+segunda se lo enseña sola.
+
+Es el juego más sencillo que se puede hacer con un cubo delante —ver un color y
+encontrar su cara— y por eso es por donde empezar con 4 años. Cada camino que termina
+es dos baldosas más largo que el anterior, hasta dieciséis; se guarda el más largo.
+
+Vale cualquier sentido de giro. A esta edad la mano todavía no distingue horario de
+antihorario, y exigirlo convertiría un juego en un examen.
+
+### 🫧 Apaga los colores
+El mismo aprendizaje, pero con prisa: caen **luces de colores** y hay que apagarlas
+girando esa cara antes de que toquen el suelo. Tres vidas, y la cosa va acelerando
+según vas apagando.
+
+Acelera **con suelo**: por rápido que se ponga siempre quedan más de dos segundos para
+reaccionar y nunca caen más de tres a la vez. Un juego imposible no es difícil, es un
+juego roto, y eso se comprueba en las pruebas.
+
+El color de la que va primera **se dice en voz alta**, así que se puede jugar sin saber
+leer. El botón 💡 la señala y repite el color.
 
 ### 🔙 Deshaz la mezcla ← **empieza por aquí**
 El juego importante para un niño de 4 años.
@@ -107,6 +132,23 @@ Si se equivoca no pasa nada: la app recalcula sola y sigue desde donde esté.
 
 > **Aviso del paso 🔄**: en "girar las esquinas" el cubo *parece* que se rompe por
 > abajo. Es normal, y al terminar el paso vuelve solo. A los niños les encanta.
+
+### Las reglas de los juegos, aparte
+
+Lo que se puede decidir sin pantalla —qué color cae, cuál se apaga al girar una cara,
+cómo es el camino, a qué ritmo va la cosa— vive en `js/juegos.js`, que no toca el DOM
+ni sabe del cubo. Así `test/juegos.js` puede comprobar que **son jugables**, no sólo
+que no revientan: que la lluvia sólo va a más pero nunca por debajo de su suelo, que
+apagando color a color la pantalla se vacía siempre, que en el camino no salen dos
+baldosas iguales seguidas (si salieran, el niño giraría dos veces la misma cara sin
+saber si ha avanzado, y encima la segunda vuelta desharía la primera).
+
+Escribiendo esas pruebas salió un fallo de verdad: la lluvia miraba el reloj para saber
+cuánto había bajado cada gota. El navegador **para los fotogramas** cuando la página no
+se ve —el móvil bloqueado, otra pestaña—, pero el reloj sigue: al volver, todas las
+gotas llegaban al suelo de golpe y la partida se había acabado sola sin que el niño
+tocara nada. Ahora se avanza por lo que ha durado cada fotograma, con tope; una pausa
+sólo congela el juego.
 
 ---
 
@@ -515,6 +557,7 @@ js/f2l.js         los 41 F2L      (generado, no editar a mano)
 js/myalgs.js      tus algoritmos: guardar, validar y elegir
 js/lessons.js     contenido del tutorial
 js/patrones.js    los doce patrones
+js/juegos.js      las reglas del caminito y la lluvia de colores
 js/stats.js       medias al estilo WCA
 js/sections.js    tutorial, cronómetro y entrenador
 js/app.js         pantallas y juegos
