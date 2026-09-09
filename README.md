@@ -43,6 +43,7 @@ la app se entera y sigue desde donde esté. Si se desconecta y vuelve, tampoco p
 |---|---|---|
 | 👶 | **Para peques** | Tres juegos para empezar de cero |
 | 📚 | **Aprender a resolverlo** | Tutorial del método principiante, lección a lección |
+| 🎨 | **Patrones** | Dibujos con el cubo, guiados giro a giro |
 | ⏱️ | **Cronómetro** | Mezclas y medias al estilo WCA |
 | 🚀 | **Fridrich (CFOP)** | Guía en vivo y entrenador de OLL y PLL |
 
@@ -68,6 +69,14 @@ y luego se la enseña. Tres estrellas si lo hace sin pista.
 Esto es lo que de verdad enseña a un niño pequeño: entender que un giro se deshace
 girando al revés. Es la base de todo lo demás y da resultados rápido.
 
+### 🐵 El mono dice
+El juego de repetir secuencias, con el cubo. El mono hace un giro en la pantalla y el
+niño lo repite; cada ronda añade uno más. Enseña a reconocer las caras por su color y el
+sentido del giro, y engancha porque siempre quieres pasar de tu récord (que se guarda).
+
+Si falla, no se acaba en seco: le enseña **cuál tocaba** y le ofrece otra partida. El
+botón 💡 le recuerda el giro que viene si se atasca.
+
 ### 🏆 Resuélvelo conmigo
 El método completo, un movimiento cada vez, con **ocho pasos** que tienen nombre:
 
@@ -90,6 +99,23 @@ Si se equivoca no pasa nada: la app recalcula sola y sigue desde donde esté.
 
 > **Aviso del paso 🔄**: en "girar las esquinas" el cubo *parece* que se rompe por
 > abajo. Es normal, y al terminar el paso vuelve solo. A los niños les encanta.
+
+---
+
+## 🎨 Patrones
+
+Doce dibujos clásicos: damero, seis puntos, tetris, el cubo dentro del cubo, las tres
+serpientes (anaconda, pitón y mamba), el superflip… Cada uno con su dificultad y **una
+miniatura del cubo desplegado que no está dibujada a mano: se calcula aplicando el
+algoritmo**, así que lo que ves en la lista es exactamente lo que te va a salir.
+
+Tocas uno y te guía giro a giro, igual que el resto de la app. Todos los patrones parten
+del cubo resuelto, así que **si el tuyo está desordenado te lo resuelve primero** y luego
+hace el dibujo. Al terminar, un botón lo deshace y te deja el cubo como estaba.
+
+Es la forma más agradecida de practicar: son secuencias cortas (de 6 a 20 giros), el
+resultado se ve, y a un niño le hace mucha más gracia dejar el cubo a cuadros que
+resolverlo.
 
 ---
 
@@ -311,6 +337,13 @@ reales: una "Z" que era en realidad otra vez la U-perm (tenía 20 casos creyendo
 
 Para regenerar los conjuntos: `npm run build`.
 
+**Los patrones** se verifican igual (`test/patrones.js`): que se entiendan, que dejen un
+cubo válido, que no lo dejen resuelto, que no se repitan entre ellos y que se puedan
+deshacer. Los que tienen una forma describible con una regla se comprueban además contra
+esa regla: que el damero deje las seis caras a cuadros de dos colores, que los seis puntos
+dejen las seis caras con un lunar, que los cuatro puntos dejen cuatro con lunar y dos
+enteras, y que el superflip deje las ocho esquinas en su sitio y los doce bordes del revés.
+
 **Los algoritmos que grabas o escribes** pasan por el mismo filtro antes de guardarse:
 `test/casos.js` comprueba que el validador acepta los buenos, rechaza los que no resuelven
 el caso, y señala la notación que no entiende.
@@ -366,6 +399,7 @@ js/oll.js         los 57 OLL      (generado, no editar a mano)
 js/f2l.js         los 41 F2L      (generado, no editar a mano)
 js/myalgs.js      tus algoritmos: guardar, validar y elegir
 js/lessons.js     contenido del tutorial
+js/patrones.js    los doce patrones
 js/stats.js       medias al estilo WCA
 js/sections.js    tutorial, cronómetro y entrenador
 js/app.js         pantallas y juegos

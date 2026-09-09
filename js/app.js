@@ -3,16 +3,17 @@
 // ============================================================
 
 import {
-  FACES, OPPOSITE, solvedState, applyMove, isSolved,
+  FACES, OPPOSITE, solvedState, applyMove, applyAlg, expandAlg, isSolved,
   invertAlg, simplifyAlg, moveToString, rotateFrame, findRotation,
 } from './cube.js';
 import { decode, toFacelets, VALUE_COLOR } from './xiaomi.js';
 import { solve, PHASE_INFO, detalleDe } from './solver.js';
 import { SmartCube } from './giiker.js';
 import { Calibration, COLOR_HEX, COLOR_OPPOSITE, COLORS } from './calibrate.js';
-import { Cube3D, arrowSVG } from './cube3d.js';
+import { Cube3D, arrowSVG, netHTML } from './cube3d.js';
 import { fx } from './fx.js';
 import { lessonById, LESSONS } from './lessons.js';
+import { PATRONES, patronPorId } from './patrones.js';
 import * as sections from './sections.js';
 
 // ------------------------------------------------------------
@@ -111,6 +112,7 @@ function go(name) {
   if (name !== 'play') { stopGame(); }
   if (name === 'menu') refreshMenu();
   if (name === 'levels') buildLevels();
+  if (name === 'patrones') buildPatrones();
   if (name === 'diag') refreshDiag();
   sections.onScreen(name);
 }
@@ -506,6 +508,30 @@ function buildLevels() {
     b.innerHTML = n + '<span class="stars">' + (st ? '⭐'.repeat(Math.min(st, 3)) : '&nbsp;') + '</span>';
     if (n > app.maxLevel) b.disabled = true;
     b.onclick = () => { fx.click(); startGame('undo', n); };
+    box.appendChild(b);
+  }
+}
+
+// ------------------------------------------------------------
+//  Patrones
+// ------------------------------------------------------------
+/** Cómo queda el cubo con ese patrón (se calcula, no se dibuja a mano) */
+function estadoPatron(pat) {
+  return applyAlg(solvedState(), expandAlg(pat.alg));
+}
+
+function buildPatrones() {
+  const box = $('#pat-lista');
+  box.innerHTML = '';
+  for (const pat of PATRONES) {
+    const b = document.createElement('button');
+    const hecho = (app.stars['patron-' + pat.id] || 0) > 0;
+    if (hecho) b.classList.add('hecho');
+    b.innerHTML = netHTML(estadoPatron(pat), hexMap(), 6)
+      + `<b>${pat.emoji} ${pat.nombre}</b>`
+      + `<em>${'●'.repeat(pat.dificultad)}${'○'.repeat(3 - pat.dificultad)}`
+      + `${hecho ? ' ✓' : ''}</em>`;
+    b.onclick = () => { fx.click(); startGame('patron', pat.id); };
     box.appendChild(b);
   }
 }
@@ -1056,6 +1082,256 @@ function gameCurso(desdeId) {
 }
 
 // ------------------------------------------------------------
+//  JUEGO 5 — Hacer un patrón
+// ------------------------------------------------------------
+function gamePatron(id) {
+  const pat = patronPorId(id);
+  const alg = expandAlg(pat.alg);
+  const objetivo = estadoPatron(pat);
+  let fase = 'resolver';        // resolver | haciendo | hecho
+  let plan = null, pi = 0;      // para dejar el cubo resuelto primero
+  let hist = [];                // giros dados ya dentro del patrón
+
+  const restante = () => simplifyAlg(invertAlg(hist).concat(alg));
+
+  function objetivoHTML(txt) {
+    return '<div class="objetivo">' + netHTML(objetivo, hexMap(), 7)
+      + '<span>' + txt + '</span></div>';
+  }
+
+  function pintar() {
+    if (fase === 'hecho') return;
+
+    if (fase === 'resolver') {
+      if (isSolved(app.state)) { fase = 'haciendo'; hist = []; pintar(); return; }
+      // El plan se calcula una vez y se sigue. Recalcularlo en cada giro
+      // haria que la guia cambiase de idea y se quedase dando vueltas.
+      if (!plan) {
+        try { plan = solve(app.state); pi = 0; } catch (e) {
+          clearMove('<div class="move-text" style="text-align:center">Ups…<small>' + e.message + '</small></div>');
+          return;
+        }
+      }
+      const m = plan.moves[pi];
+      if (!m) { plan = null; pintar(); return; }
+      setSteps(2, 0, '1 · Primero, cubo resuelto');
+      setBar(0);
+      setFormula(plan.moves.slice(pi, pi + 10), 0);
+      showMove(m.face, m.amount, 'Los patrones salen del cubo resuelto. Te lo dejo listo.');
+      return;
+    }
+
+    const faltan = restante();
+    if (!faltan.length) { terminar(); return; }
+    setSteps(2, 1, '2 · ' + pat.emoji + ' ' + pat.nombre);
+    setBar(Math.round((1 - faltan.length / alg.length) * 100));
+    const enOrden = faltan.length <= alg.length
+      && faltan.every((m, k) => {
+        const d = alg.length - faltan.length;
+        return alg[d + k] && m.face === alg[d + k].face && m.amount === alg[d + k].amount;
+      });
+    const lista = enOrden ? alg : faltan;
+    const hechos = enOrden ? alg.length - faltan.length : 0;
+    setFormula(lista, hechos);
+    const m = faltan[0];
+    showMove(m.face, m.amount, '');
+    $('#play-tip').innerHTML = objetivoHTML(enOrden
+      ? 'Quedan ' + faltan.length + ' giros para que quede así.'
+      : 'Ese giro no era: te llevo de vuelta.');
+  }
+
+  function terminar() {
+    fase = 'hecho';
+    clearMove('<div class="move-text" style="text-align:center">' + pat.emoji + ' ¡'
+      + pat.nombre.toUpperCase() + '!<small>mira tu cubo</small></div>');
+    $('#play-tip').innerHTML = objetivoHTML(pat.desc);
+    setFormula(null);
+    setBar(100);
+    setSteps(2, 2, '🎨 Patrón terminado');
+    award('patron-' + pat.id, 3);
+    fx.fanfare(); fx.confetti();
+    fx.say('¡' + pat.nombre + '! Mira qué bonito');
+    $('#play-action').classList.remove('hidden');
+    $('#play-action').textContent = '↩️ Deshacerlo';
+    $('#play-action').onclick = () => { fx.click(); startGame('deshacer-patron', id); };
+    $('#play-action2').classList.remove('hidden');
+    $('#play-action2').textContent = '🎨 Otro patrón';
+    $('#play-action2').onclick = () => { fx.click(); go('patrones'); };
+  }
+
+  return {
+    title: pat.emoji + ' ' + pat.nombre,
+    start() {
+      $('#play-action').classList.add('hidden');
+      $('#play-action2').classList.add('hidden');
+      fase = isSolved(app.state) ? 'haciendo' : 'resolver';
+      hist = [];
+      fx.say(pat.nombre + '. ' + pat.desc, { rate: 1 });
+      pintar();
+    },
+    onMove(face, amount) {
+      if (fase === 'resolver') {
+        const esperado = plan && plan.moves[pi];
+        if (esperado && esperado.face === face && esperado.amount === amount) pi++;
+        else plan = null;                       // te has desviado: replanifico
+        if (isSolved(app.state)) { fase = 'haciendo'; hist = []; plan = null; pi = 0; }
+      } else if (fase === 'haciendo') {
+        hist.push({ face, amount });
+      }
+      pintar();
+    },
+    onJump() { plan = null; pi = 0; if (fase === 'haciendo') hist = []; pintar(); },
+    hint() { fx.say(pat.desc); $('#play-tip').innerHTML = objetivoHTML(pat.desc); },
+  };
+}
+
+/** Deshacer un patrón es hacer su algoritmo al revés */
+function gameDeshacerPatron(id) {
+  const pat = patronPorId(id);
+  const alg = invertAlg(expandAlg(pat.alg));
+  let hist = [];
+  const restante = () => simplifyAlg(invertAlg(hist).concat(alg));
+
+  function pintar() {
+    const faltan = restante();
+    if (!faltan.length) {
+      clearMove('<div class="move-text" style="text-align:center">¡CUBO RESUELTO!<small>como estaba</small></div>');
+      $('#play-tip').textContent = 'Listo para otro patrón.';
+      setFormula(null); setBar(100); setSteps(1, 1, '↩️ Deshecho');
+      fx.fanfare(); fx.confetti();
+      $('#play-action').classList.remove('hidden');
+      $('#play-action').textContent = '🎨 Otro patrón';
+      $('#play-action').onclick = () => { fx.click(); go('patrones'); };
+      return;
+    }
+    setSteps(1, 0, '↩️ Deshaciendo ' + pat.nombre);
+    setBar(Math.round((1 - faltan.length / alg.length) * 100));
+    setFormula(faltan.slice(0, 12), 0);
+    showMove(faltan[0].face, faltan[0].amount, 'Vamos a dejarlo como estaba.');
+  }
+
+  return {
+    title: '↩️ Deshacer ' + pat.nombre,
+    start() { $('#play-action').classList.add('hidden'); $('#play-action2').classList.add('hidden'); pintar(); },
+    onMove(face, amount) { hist.push({ face, amount }); pintar(); },
+    onJump() { hist = []; pintar(); },
+  };
+}
+
+// ------------------------------------------------------------
+//  JUEGO 6 — El mono dice (memoria)
+// ------------------------------------------------------------
+//  Como el juego clásico de repetir secuencias, pero con el cubo:
+//  el mono hace unos giros en la pantalla y el niño los repite.
+//  Cada ronda añade un giro más.
+function gameSimon() {
+  let secuencia = [];
+  let idx = 0;
+  let fase = 'mirando';         // mirando | repitiendo | fallo
+  const mejorClave = 'simon';
+
+  const CARAS = ['U', 'R', 'F', 'D', 'L', 'B'];
+
+  function nuevaRonda() {
+    // no repetir la misma cara dos veces seguidas: se ve mucho mejor
+    const ultima = secuencia.length ? secuencia[secuencia.length - 1].face : null;
+    let face = CARAS[(Math.random() * 6) | 0];
+    while (face === ultima) face = CARAS[(Math.random() * 6) | 0];
+    secuencia.push({ face, amount: Math.random() < 0.5 ? 1 : 3 });
+    mostrar();
+  }
+
+  async function mostrar() {
+    fase = 'mirando';
+    idx = 0;
+    setSteps(secuencia.length, 0, '🐵 Mira bien: ' + secuencia.length
+      + (secuencia.length === 1 ? ' giro' : ' giros'));
+    setBar(0);
+    setFormula(null);
+    clearMove('<div class="move-text" style="text-align:center">Mira al mono<small>y luego repites tú</small></div>');
+    $('#play-tip').textContent = 'Fíjate bien…';
+    fx.say('Mira');
+    await new Promise((r) => setTimeout(r, 700));
+
+    let st = app.state.slice();
+    for (const m of secuencia) {
+      if (app.game !== juego) return;
+      st = applyMove(st, m.face, m.amount);
+      $('#play-move').innerHTML = moveCard(m.face, m.amount);
+      sayMove(m.face, m.amount);
+      if (cube3d) await cube3d.turn(m.face, m.amount, st, 560);
+      await new Promise((r) => setTimeout(r, 260));
+    }
+    if (app.game !== juego) return;
+    // el cubo de la pantalla vuelve a como está el de verdad
+    if (cube3d) cube3d.render(app.state);
+    fase = 'repitiendo';
+    setSteps(secuencia.length, 0, '🐵 ¡Ahora tú! 0 de ' + secuencia.length);
+    clearMove('<div class="move-text" style="text-align:center">¡Ahora tú!<small>repite los '
+      + secuencia.length + '</small></div>');
+    $('#play-tip').textContent = 'Hazlo igual que el mono.';
+    fx.say('¡Ahora tú!');
+  }
+
+  function acierto() {
+    idx++;
+    fx.tone(700 + idx * 60, 0.09, 'sine', 0.14);
+    setSteps(secuencia.length, idx, '🐵 Vas ' + idx + ' de ' + secuencia.length);
+    setBar(idx / secuencia.length * 100);
+    if (idx < secuencia.length) return;
+    // ronda superada
+    const mejor = app.stars[mejorClave] || 0;
+    if (secuencia.length > mejor) { app.stars[mejorClave] = secuencia.length; save(); }
+    clearMove('<div class="move-text" style="text-align:center">¡MUY BIEN!<small>ronda '
+      + secuencia.length + ' superada</small></div>');
+    fx.good(); fx.confetti(null, 40);
+    if (secuencia.length % 3 === 0) { fx.fanfare(); fx.confetti(null, 90); }
+    fx.say('¡Muy bien!');
+    setTimeout(() => { if (app.game === juego) nuevaRonda(); }, 1500);
+  }
+
+  function fallo(face, amount) {
+    fase = 'fallo';
+    fx.oops();
+    const esperado = secuencia[idx];
+    clearMove(moveCard(esperado.face, esperado.amount));
+    $('#play-tip').innerHTML = 'Casi. Tocaba <b>' + colorFem(esperado.face).toUpperCase()
+      + '</b>. Tu récord: <b>' + (app.stars[mejorClave] || 0) + '</b>';
+    setFormula(null);
+    fx.say('Casi. Era la cara ' + colorFem(esperado.face));
+    $('#play-action').classList.remove('hidden');
+    $('#play-action').textContent = '🔁 Otra vez';
+    $('#play-action').onclick = () => { fx.click(); startGame('simon'); };
+  }
+
+  const juego = {
+    title: '🐵 El mono dice',
+    start() {
+      $('#play-action').classList.add('hidden');
+      $('#play-action2').classList.add('hidden');
+      secuencia = [];
+      const mejor = app.stars[mejorClave] || 0;
+      if (mejor) toast('Tu récord: ' + mejor + ' giros seguidos');
+      nuevaRonda();
+    },
+    onMove(face, amount) {
+      if (fase !== 'repitiendo') return;
+      const esperado = secuencia[idx];
+      if (esperado.face === face && esperado.amount === amount) acierto();
+      else fallo(face, amount);
+    },
+    onJump() { /* varios giros de golpe: no se puede juzgar, se deja pasar */ },
+    hint() {
+      if (fase !== 'repitiendo') return;
+      const m = secuencia[idx];
+      $('#play-move').innerHTML = moveCard(m.face, m.amount);
+      sayMove(m.face, m.amount);
+    },
+  };
+  return juego;
+}
+
+// ------------------------------------------------------------
 //  Motor de juegos
 // ------------------------------------------------------------
 function startGame(kind, arg, verify) {
@@ -1070,7 +1346,10 @@ function startGame(kind, arg, verify) {
   app.game = kind === 'explore' ? gameExplore(verify)
     : kind === 'undo' ? gameUndo(arg)
       : kind === 'curso' ? gameCurso(arg)
-        : gameSolve();
+        : kind === 'patron' ? gamePatron(arg)
+          : kind === 'deshacer-patron' ? gameDeshacerPatron(arg)
+            : kind === 'simon' ? gameSimon()
+              : gameSolve();
   $('#play-title').textContent = app.game.title;
   app.game.start();
 }

@@ -115,6 +115,11 @@
       <span>Cronómetro<small>Mezclas y medias al estilo WCA</small></span>
     </button>
 
+    <button class="btn" data-go="patrones">
+      <span class="emoji">🎨</span>
+      <span>Patrones<small>Dibujos con el cubo, paso a paso</small></span>
+    </button>
+
     <button class="btn" data-go="fridrich">
       <span class="emoji">🚀</span>
       <span>Fridrich (CFOP)<small>F2L, OLL y PLL con estadísticas</small></span>
@@ -140,12 +145,16 @@
       <span class="emoji">🔙</span>
       <span>Deshaz la mezcla<small>Del 1 al 8 · el juego para empezar</small></span>
     </button>
+    <button class="btn" data-game="simon">
+      <span class="emoji">🐵</span>
+      <span>El mono dice<small>Repite la secuencia · juego de memoria</small></span>
+    </button>
     <button class="btn" data-game="solve">
       <span class="emoji">🏆</span>
       <span>Resuélvelo conmigo<small>El método completo, paso a paso</small></span>
     </button>
     <div class="spacer"></div>
-    <p class="note">Con 4 años, empieza por <b>Deshaz la mezcla</b> y quédate ahí unos días.</p>
+    <p class="note">Con 4 años, empieza por <b>Deshaz la mezcla</b> y <b>El mono dice</b>.</p>
   </section>
 
   <!-- ============ TUTORIAL ============ -->
@@ -270,6 +279,19 @@
     </div>
     <div class="spacer"></div>
     <button class="btn ghost" id="dr-auto">⚡ Prepararlo en la pantalla</button>
+  </section>
+
+  <!-- ============ PATRONES ============ -->
+  <section id="screen-patrones" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" data-go="menu">←</button>
+      <div class="title">Patrones</div>
+    </div>
+    <p class="lead">Dibujos que puedes hacer con el cubo. Te guío giro a giro.</p>
+    <div class="patrones" id="pat-lista"></div>
+    <div class="spacer"></div>
+    <p class="note">Todos salen del cubo <b>resuelto</b>. Si no lo está, primero te ayudo
+    a resolverlo.</p>
   </section>
 
   <!-- ============ NIVELES ============ -->

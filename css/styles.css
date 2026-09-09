@@ -354,3 +354,26 @@ p.lead { text-align: center; color: #cbbde0; margin: 0 0 18px; font-size: 1.02re
 #pie a b { color: var(--accent); font-weight: 700; }
 #pie svg { width: 14px; height: 14px; flex: none; }
 #pie .sep { opacity: .4; }
+
+/* ---------- miniatura del cubo desplegado ---------- */
+.net { display: grid; gap: 1px; }
+.net i { border-radius: 1px; }
+
+/* ---------- patrones ---------- */
+.patrones { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.patrones button {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  border: none; cursor: pointer; font: inherit; padding: 12px 8px;
+  border-radius: 16px; background: rgba(255, 255, 255, .09); color: #fff;
+}
+.patrones button:active { transform: scale(.97); }
+.patrones .net { margin: 2px auto; }
+.patrones b { font-size: .92rem; }
+.patrones em { font-style: normal; font-size: .68rem; color: #bfb0d6; letter-spacing: 1px; }
+.patrones button.hecho { outline: 1px solid rgba(107, 203, 119, .55); }
+
+.objetivo {
+  display: flex; align-items: center; gap: 12px; justify-content: center;
+  background: rgba(255, 255, 255, .07); border-radius: 14px; padding: 8px 12px; margin-top: 10px;
+}
+.objetivo span { font-size: .78rem; color: #bfb0d6; text-align: left; }

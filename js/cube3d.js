@@ -207,3 +207,23 @@ export function arrowSVG(clockwise, color = '#222') {
              transform="rotate(${rot} ${hx} 48)"/>
   </svg>`;
 }
+
+/**
+ * Dibuja el cubo desplegado (las seis caras en cruz) como una miniatura.
+ * Se calcula del estado, así que enseña exactamente lo que hay.
+ */
+const NET_POS = { U: [3, 0], R: [6, 3], F: [3, 3], D: [3, 6], L: [0, 3], B: [9, 3] };
+
+export function netHTML(state, colors, px = 6) {
+  const celdas = [];
+  for (let i = 0; i < 54; i++) {
+    const cara = FACES[(i / 9) | 0];
+    const [cx, cy] = NET_POS[cara];
+    const fila = ((i % 9) / 3) | 0;
+    const col = i % 3;
+    celdas.push(`<i style="grid-column:${cx + col + 1};grid-row:${cy + fila + 1};`
+      + `background:${colors[state[i]] || '#333'}"></i>`);
+  }
+  return `<div class="net" style="grid-template-columns:repeat(12,${px}px);`
+    + `grid-template-rows:repeat(9,${px}px)">${celdas.join('')}</div>`;
+}
