@@ -74,6 +74,7 @@ import {
   applyAlg, applyMove, invertAlg, expandAlg, solvedState, simplifyAlg,
   rotateFrame, findRotation, cubies,
 } from './cube.js';
+import { solve } from './solver.js';
 
 const SIDES = ['F', 'R', 'B', 'L'];
 const CICLO = ['F', 'L', 'B', 'R'];          // U horario manda F -> L -> B -> R
@@ -325,6 +326,40 @@ export function solutionFrom(state, alg, kind) {
       return out;
     }
   }
+  return null;
+}
+
+/**
+ * Como volver a poner el cubo en un caso, este como este ahora.
+ *
+ * Un caso hay que poder repetirlo, y no solo desde el cubo resuelto:
+ * cuando acabas de hacerlo, o cuando te has liado a mitad, el cubo se
+ * queda en cualquier sitio y desde ahi tiene que haber camino de vuelta.
+ *
+ * Se prueban dos, por ese orden:
+ *
+ *   1. Deshacer lo que has hecho. Es lo corto y lo natural: repetir un
+ *      caso que acabas de resolver es desandar tus propios giros.
+ *   2. Resolver el cubo y volver a mezclarlo. Es mas largo, pero vale
+ *      siempre y no depende de que el historial este completo.
+ *
+ * Los dos se aplican de verdad antes de darlos por buenos, asi que lo
+ * que sale de aqui lleva al caso o no sale nada.
+ *
+ * @param {string[]} desde   como esta el cubo
+ * @param {string[]} hasta   el estado del caso
+ * @param {Array} deshacer   giros dados desde que se puso el caso
+ * @param {Array|string} mezcla  la mezcla que crea el caso desde resuelto
+ * @returns {Array|null} los giros, o null si no se ha encontrado camino
+ */
+export function rutaAlCaso(desde, hasta, deshacer, mezcla) {
+  const llega = (movs) => !!movs && applyAlg(desde, movs).join('') === hasta.join('');
+  const atras = simplifyAlg(invertAlg(deshacer || []));
+  if (llega(atras)) return atras;
+  try {
+    const largo = simplifyAlg(solve(desde).moves.concat(expandAlg(mezcla)));
+    if (llega(largo)) return largo;
+  } catch (e) { /* el solucionador no ha podido con este cubo */ }
   return null;
 }
 

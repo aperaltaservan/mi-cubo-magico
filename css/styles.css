@@ -135,6 +135,8 @@ p.lead { text-align: center; color: #cbbde0; margin: 0 0 18px; font-size: 1.02re
 }
 .formula span.now { background: var(--ink); color: #fff; transform: scale(1.12); }
 .formula span.done { opacity: .35; }
+/* "y otros N": una vuelta larga no cabe entera y tampoco hace falta */
+.formula span.mas { background: none; color: var(--muted); font-weight: 700; }
 
 /* ---------- progreso ---------- */
 .progress { height: 12px; border-radius: 99px; background: rgba(255, 255, 255, .14); overflow: hidden; margin: 12px 0 6px; }

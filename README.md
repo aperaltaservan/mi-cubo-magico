@@ -269,13 +269,37 @@ arriba, la de delante y la de la derecha, que es donde pasa todo. No son dibujos
 guardados, se calculan del estado del caso igual que el cubo grande, así que **enseñan
 exactamente lo que te vas a encontrar** y no pueden quedarse desfasadas.
 
-Toca un caso y la app te da **la mezcla que lo prepara**. Cuando tu cubo llega a ese caso
-te avisa, cronometra, y **te guía movimiento a movimiento con el giro de ajuste incluido**
-(marcado con `*`): un algoritmo sólo funciona si antes colocas la cara de arriba, y ese
-giro depende de cómo haya caído la mezcla.
+Toca un caso y la app te lleva hasta él **desde donde esté tu cubo**, giro a giro, con la
+tarjeta de color del que toca. Cuando llegas te avisa, cronometra, y **te guía movimiento a
+movimiento con el giro de ajuste incluido** (marcado con `*`): un algoritmo sólo funciona si
+antes colocas la cara de arriba, y ese giro depende de cómo haya caído la mezcla.
 
 Guarda **el mejor tiempo y la media de tus últimos 5 intentos por caso**, para que veas
 cuáles llevas flojos. Sin cubo conectado, un botón prepara el caso en la pantalla.
+
+### 🔁 Repetir el caso
+
+Un caso se aprende repitiéndolo, y el cubo casi nunca está resuelto cuando quieres volver a
+empezar: o **acabas de hacerlo**, o **lo has dejado a medias** porque no te salía. El botón
+🔁 te devuelve al caso desde donde sea.
+
+Busca la vuelta por dos caminos, en este orden:
+
+1. **Deshacer lo que has hecho.** Es lo corto y lo natural: repetir un caso que acabas de
+   resolver es desandar tus propios giros. Dejarlo a medias tras cuatro giros cuesta cuatro
+   giros de vuelta.
+2. **Resolver el cubo y volver a mezclarlo.** Largo, pero vale siempre, y es la red por si
+   el cubo viene de cualquier otra parte.
+
+Los dos se **aplican de verdad antes de enseñarlos**: lo que sale en pantalla lleva al caso,
+o no sale nada. `test/casos.js` lo comprueba sobre los 119 casos en los tres escenarios —
+acabado, a medias y perdido— y además vigila que el atajo siga siendo atajo: lo más largo
+que sale al repetir algo recién hecho son 21 giros, y a medias, 4. Si algún día la vuelta
+corta dejara de encontrarse y todo se fuera por el camino largo, esa prueba lo cazaría.
+
+Cuando la vuelta es larga la lista se corta a los primeros catorce giros con un `+N`, y la
+app lo dice: *"el cubo está muy revuelto, esto lo resuelve y lo vuelve a mezclar"*. Cien
+fichas en pantalla no las lee nadie.
 
 ### 🌑 Apagar la última capa (sólo en F2L)
 

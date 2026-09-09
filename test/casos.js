@@ -161,6 +161,80 @@ console.log('--- la guía en vivo, de la cruz al final ---');
   console.log('  máximo de movimientos guiados: ' + maxN);
 }
 
+console.log('--- repetir un caso desde donde se haya quedado el cubo ---');
+{
+  // Un caso hay que poder repetirlo, y el cubo casi nunca está resuelto
+  // cuando quieres: o acabas de hacerlo, o lo has dejado a medias. Desde
+  // cualquiera de esos dos sitios tiene que haber vuelta, y corta: son
+  // los dos que pasan de verdad.
+  let sinRuta = 0, noLlega = 0, total = 0;
+  let largaHecho = 0, largaMedias = 0;
+  const maxLargo = { hecho: 0, medias: 0, perdido: 0 };
+
+  const vuelta = (desde, objetivo, deshacer, mezcla, etiqueta) => {
+    total++;
+    const ruta = A.rutaAlCaso(desde, objetivo, deshacer, mezcla);
+    if (!ruta) { sinRuta++; return null; }
+    if (C.applyAlg(desde, ruta).join('') !== objetivo.join('')) { noLlega++; return null; }
+    maxLargo[etiqueta] = Math.max(maxLargo[etiqueta], ruta.length);
+    return ruta;
+  };
+
+  for (const kind of ['F2L', 'OLL', 'PLL']) {
+    for (const caso of A.SETS[kind].casos) {
+      const mezcla = A.setupFor(caso, rnd);
+      const objetivo = C.applyAlg(C.solvedState(), mezcla);
+
+      // ya estás en el caso: la vuelta es no dar ni un giro
+      total++;
+      const quieto = A.rutaAlCaso(objetivo, objetivo, [], mezcla);
+      if (!quieto || quieto.length) noLlega++;
+
+      // lo has hecho y quieres repetirlo: se deshacen tus propios giros,
+      // así que no puede costar más que la solución que acabas de dar
+      const sol = A.solutionFrom(objetivo, caso.alg, kind);
+      if (sol) {
+        const r = vuelta(C.applyAlg(objetivo, sol), objetivo, sol, mezcla, 'hecho');
+        if (r && r.length > C.simplifyAlg(C.invertAlg(sol)).length) largaHecho++;
+      }
+
+      // lo has dejado a medias: unos cuantos giros y a otra cosa. Es el
+      // caso que pidió el usuario, y tiene que salir por el camino corto
+      const medias = [];
+      let st = objetivo;
+      for (let k = 0; k < 4; k++) {
+        const m = { face: ['R', 'U', 'F'][(rnd() * 3) | 0], amount: 1 + ((rnd() * 3) | 0) };
+        st = C.applyMove(st, m.face, m.amount);
+        medias.push(m);
+      }
+      const r = vuelta(st, objetivo, medias, mezcla, 'medias');
+      if (r && r.length > medias.length) largaMedias++;
+
+      // y el peor caso: liado y sin historial. Aquí toca resolver el cubo
+      // y volver a mezclarlo; es largo, pero tiene que existir
+      vuelta(st, objetivo, [], mezcla, 'perdido');
+    }
+  }
+
+  // el cubo viene de cualquier parte, ni siquiera del caso
+  for (let i = 0; i < 12; i++) {
+    const caso = A.SETS.OLL.casos[(rnd() * 57) | 0];
+    const mezcla = A.setupFor(caso, rnd);
+    const objetivo = C.applyAlg(C.solvedState(), mezcla);
+    vuelta(C.applyAlg(C.solvedState(), C.randomScramble(25, rnd)), objetivo, [], mezcla, 'perdido');
+  }
+
+  t('siempre hay camino de vuelta al caso', sinRuta === 0, sinRuta + ' sin ruta de ' + total);
+  t('y el camino lleva de verdad al caso', noLlega === 0, noLlega + ' no llegan');
+  t('repetir lo que acabas de hacer es deshacerlo', largaHecho === 0, largaHecho + ' se van por lo largo');
+  t('dejarlo a medias también sale por el camino corto', largaMedias === 0,
+    largaMedias + ' se van por lo largo');
+  t('y el corto es corto de verdad', maxLargo.hecho <= 25 && maxLargo.medias <= 4,
+    'hecho ' + maxLargo.hecho + ', a medias ' + maxLargo.medias);
+  console.log('  ' + total + ' vueltas probadas · lo más largo: ' + maxLargo.hecho
+    + ' tras hacerlo, ' + maxLargo.medias + ' a medias, ' + maxLargo.perdido + ' sin historial');
+}
+
 console.log('--- apagar la última capa (entrenador de F2L) ---');
 {
   let malas = 0, aMedias = 0, delPar = 0;

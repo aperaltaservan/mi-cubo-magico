@@ -688,6 +688,17 @@ export const EN = {
   // ---------- Entrenar un caso ----------
   'Caso': 'Case',
   'Otro caso': 'Another case',
+  'Repetir este caso': 'Do this case again',
+  'Pulsa 🔁 para repetirlo, o 🔀 para otro caso.':
+    'Press 🔁 to do it again, or 🔀 for another case.',
+  'Haz estos giros y te dejo el caso puesto. Te aviso al llegar.':
+    'Make these turns and I will set the case up. I will tell you when you get there.',
+  'Haz estos giros, o pulsa <b>⚡ Prepararlo en la pantalla</b>.':
+    'Make these turns, or press <b>⚡ Set it up on screen</b>.',
+  'El cubo está muy revuelto: esto lo resuelve y lo vuelve a mezclar.':
+    'The cube is quite scrambled: this solves it and sets the case up again.',
+  'Resuelve el cubo y te preparo el caso otra vez':
+    'Solve the cube and I will set the case up again',
   'Prepara el caso': 'Set the case up',
   '⚡ Prepararlo en la pantalla': '⚡ Set it up on screen',
   'Algoritmos': 'Algorithms',

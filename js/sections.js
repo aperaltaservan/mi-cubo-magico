@@ -9,7 +9,7 @@ import {
 import {
   SETS, recognise, setupFor, OLL_DONE, F2L_DONE, CROSS_DONE,
   solutionFrom, pairSlotDone, restoDone, resuelveElCaso, mapearAlg,
-  estadoDelCaso, pegatinasUltimaCapa,
+  estadoDelCaso, pegatinasUltimaCapa, rutaAlCaso,
 } from './algs.js';
 import { isoCubeSVG } from './cube3d.js';
 import { solve } from './solver.js';
@@ -603,7 +603,7 @@ let casoStats = {};
 let pestana = 'guia';
 const drill = {
   caso: null, kind: null, fase: 'preparar', objetivo: null,
-  t0: 0, raf: 0, hist: [], base: null, setup: null,
+  t0: 0, raf: 0, hist: [], base: null, setup: null, ruta: null,
   grabando: false, grabados: [],
 };
 
@@ -659,6 +659,7 @@ function initFridrich() {
     };
   });
   $('#dr-siguiente').onclick = () => { ctx.fx.click(); nuevoDrill(drill.kind); };
+  $('#dr-repetir').onclick = () => { ctx.fx.click(); repetirCaso(); };
   $('#dr-auto').onclick = () => { ctx.fx.click(); ctx.setState(applyAlg(solvedState(), drill.setup)); };
   $('#dr-grabar').onclick = () => { ctx.fx.click(); alternarGrabacion(); };
   $('#dr-escribir').onclick = () => { ctx.fx.click(); escribirAlgoritmo(); };
@@ -860,18 +861,41 @@ function pintarGuia(kind, caso, base, faltan, hueco) {
 function abrirDrill(kind, caso) {
   drill.kind = kind;
   drill.caso = caso;
-  drill.fase = 'preparar';
-  drill.hist = [];
   drill.grabando = false;
   drill.grabados = [];
-  cancelAnimationFrame(drill.raf);
   drill.setup = setupFor(caso);
   drill.objetivo = applyAlg(solvedState(), drill.setup);
   drill.base = solutionFrom(drill.objetivo, mis.algElegido(kind, caso), kind);
+  colocarCaso([]);
   $('#dr-titulo').textContent = kind + ' · ' + t(caso.name);
   ctx.go('drill');
   renderDrill();
   escenaDrill().render(drill.objetivo);
+}
+
+/**
+ * Deja el entrenador listo para (volver a) hacer el caso desde donde
+ * esté el cubo ahora mismo. `deshacer` son los giros que se han dado
+ * desde que se puso el caso, que suelen ser el camino corto de vuelta.
+ */
+function colocarCaso(deshacer) {
+  cancelAnimationFrame(drill.raf);
+  const puesto = ctx.app.state.join('') === drill.objetivo.join('');
+  drill.ruta = puesto ? [] : rutaAlCaso(ctx.app.state, drill.objetivo, deshacer, drill.setup);
+  drill.hist = [];
+  drill.fase = puesto ? 'listo' : 'preparar';
+  drill.t0 = 0;
+  $('#dr-tiempo').textContent = '—';
+}
+
+/** Volver a hacer el mismo caso, esté el cubo como esté */
+function repetirCaso() {
+  if (!drill.caso) return;
+  drill.grabando = false;
+  drill.grabados = [];
+  colocarCaso(drill.hist);
+  if (!drill.ruta) ctx.toast(t('Resuelve el cubo y te preparo el caso otra vez'), 3200);
+  renderDrill();
 }
 
 function nuevoDrill(kind) {
@@ -880,9 +904,27 @@ function nuevoDrill(kind) {
 }
 
 /** Lo que falta desde donde este el cubo: deshacer lo hecho y seguir el plan */
-function restante() {
-  if (!drill.base) return [];
-  return simplifyAlg(invertAlg(drill.hist).concat(drill.base));
+function restante(plan) {
+  const base = plan || drill.base;
+  if (!base) return [];
+  return simplifyAlg(invertAlg(drill.hist).concat(base));
+}
+
+/**
+ * Pinta una lista de giros con el siguiente resaltado en su color. Con
+ * `tope` se corta: una vuelta al caso desde un cubo revuelto puede ser
+ * de cien giros, y cien fichas en pantalla no las lee nadie. Los que
+ * importan son los primeros; el resto se cuenta.
+ */
+function pasos(lista, tope) {
+  const corta = tope && lista.length > tope ? lista.slice(0, tope) : lista;
+  return corta.map((m, i) => {
+    const fondo = i === 0 ? `background:${ctx.hexOf(m.face)};color:#1c1030` : '';
+    return `<span class="${i === 0 ? 'now' : ''}" style="${fondo}">`
+      + `${moveToString(m)}${m.ajuste ? '*' : ''}</span>`;
+  }).join('')
+    + (corta.length < lista.length
+      ? `<span class="mas">+${lista.length - corta.length}</span>` : '');
 }
 
 function renderDrill() {
@@ -909,12 +951,26 @@ function renderDrill() {
 
   if (drill.fase === 'preparar') {
     $('#dr-fase').textContent = t('1 · Prepara el caso');
-    $('#dr-move').innerHTML = '';
-    $('#dr-formula').innerHTML = chips(drill.setup);
-    $('#dr-tip').innerHTML = ctx.app.mode === 'state'
-      ? t('Con el cubo <b>resuelto</b>, aplica esta mezcla. Te aviso cuando llegues.')
-      : t('Pulsa <b>⚡ Prepararlo en la pantalla</b> y luego resuélvelo')
-        + ' ' + t(ctx.sinCubo() ? 'con el teclado.' : 'con tu cubo.');
+    // Sin ruta no se puede guiar desde aquí: se cae a la mezcla de
+    // siempre, que sale del cubo resuelto y por eso hay que decirlo.
+    if (!drill.ruta) {
+      $('#dr-move').innerHTML = '';
+      $('#dr-formula').innerHTML = chips(drill.setup);
+      $('#dr-tip').innerHTML =
+        t('Con el cubo <b>resuelto</b>, aplica esta mezcla. Te aviso cuando llegues.');
+      $('#dr-tiempo').textContent = '—';
+      return;
+    }
+    const faltan = restante(drill.ruta);
+    $('#dr-formula').innerHTML = pasos(faltan, 14);
+    $('#dr-move').innerHTML = faltan[0] ? ctx.moveCard(faltan[0].face, faltan[0].amount) : '';
+    $('#dr-tip').innerHTML = (ctx.app.mode === 'state'
+      ? t('Haz estos giros y te dejo el caso puesto. Te aviso al llegar.')
+      : t('Haz estos giros, o pulsa <b>⚡ Prepararlo en la pantalla</b>.'))
+      // el camino corto es deshacer lo hecho; si sale largo es que no lo
+      // hay, y entonces vale la pena decir por qué son tantos giros
+      + (faltan.length > 25
+        ? ' ' + t('El cubo está muy revuelto: esto lo resuelve y lo vuelve a mezclar.') : '');
     $('#dr-tiempo').textContent = '—';
     return;
   }
@@ -922,16 +978,13 @@ function renderDrill() {
     $('#dr-fase').textContent = t('✅ Conseguido');
     $('#dr-move').innerHTML = '';
     $('#dr-formula').innerHTML = chips(drill.base || []);
-    $('#dr-tip').textContent = t('Pulsa 🔀 arriba para otro caso.');
+    $('#dr-tip').textContent = t('Pulsa 🔁 para repetirlo, o 🔀 para otro caso.');
     return;
   }
 
   const faltan = restante();
   $('#dr-fase').textContent = t(drill.fase === 'listo' ? '2 · ¡Resuélvelo!' : '⏱️ Corriendo');
-  $('#dr-formula').innerHTML = faltan.map((m, i) => {
-    const fondo = i === 0 ? `background:${ctx.hexOf(m.face)};color:#1c1030` : '';
-    return `<span class="${i === 0 ? 'now' : ''}" style="${fondo}">${moveToString(m)}${m.ajuste ? '*' : ''}</span>`;
-  }).join('');
+  $('#dr-formula').innerHTML = pasos(faltan);
   const m = faltan[0];
   if (m) {
     $('#dr-move').innerHTML = ctx.moveCard(m.face, m.amount);
@@ -1053,7 +1106,19 @@ function drillOnState(state) {
       drill.hist = [];
       ctx.fx.good();
       renderDrill();
+      return;
     }
+    if (ctx.lastMove) drill.hist.push(ctx.lastMove);
+    // Si te has ido lejos del plan, se busca otro camino en vez de
+    // pedirte que deshagas medio cubo para volver a empezar.
+    if (drill.ruta) {
+      const faltan = restante(drill.ruta);
+      if (faltan.length > drill.ruta.length + 4) {
+        const otra = rutaAlCaso(state, drill.objetivo, [], drill.setup);
+        if (otra && otra.length < faltan.length) { drill.ruta = otra; drill.hist = []; }
+      }
+    }
+    renderDrill();
     return;
   }
 
