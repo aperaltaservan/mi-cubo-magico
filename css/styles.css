@@ -352,7 +352,12 @@ p.lead { text-align: center; color: #cbbde0; margin: 0 0 18px; font-size: 1.02re
 }
 #pie a:hover { color: #fff; background: rgba(255, 255, 255, .08); }
 #pie a b { color: var(--accent); font-weight: 700; }
-#pie svg { width: 14px; height: 14px; flex: none; }
+/* El gato de GitHub tiene los huecos (orejas, patas) muy finos: a 14px y
+   en morado apagado se rellenaban al suavizar y quedaba un punto redondo.
+   16px es su tamaño nativo (viewBox 0 0 16 16, un pixel por unidad) y con
+   el color aclarado la silueta se distingue. */
+#pie svg { width: 16px; height: 16px; flex: none; color: #c9bce0; }
+#pie a:hover svg { color: #fff; }
 #pie .sep { opacity: .4; }
 
 /* ---------- miniatura del cubo desplegado ---------- */
