@@ -1,0 +1,12 @@
+.git
+.gitignore
+node_modules
+test
+dev
+INICIAR.bat
+README.md
+LICENSE
+Dockerfile
+.dockerignore
+docker-compose.yml
+*.log

@@ -1,0 +1,22 @@
+# Para desplegar en Dokploy con el tipo "Compose", o para probarlo en local:
+#     docker compose up --build
+#
+# Si usas el tipo "Application" con Dockerfile, este fichero no hace falta.
+services:
+  cubo:
+    build: .
+    # Dokploy pone el dominio y el https por delante (Traefik + Let's Encrypt).
+    # En local, descomenta el puerto para entrar por http://localhost:3000
+    # ports:
+    #   - "3000:3000"
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - CONTENEDOR=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s

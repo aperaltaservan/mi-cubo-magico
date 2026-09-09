@@ -378,6 +378,40 @@ Desde la consola del navegador hay un manejador para trastear:
 
 ---
 
+## Ponerlo en un servidor (Dokploy)
+
+Merece la pena: servido por **https**, el Bluetooth Web funciona también desde el **móvil
+o la tablet**, que es mucho más cómodo para un niño que estar delante del ordenador.
+
+> El Bluetooth Web exige contexto seguro. En local vale `localhost`; en un servidor hace
+> falta **https de verdad**, que Dokploy resuelve solo con Let's Encrypt. Por `http://`
+> plano el botón de conectar no funcionará.
+
+1. En Dokploy: **Create → Application**.
+2. **Provider**: GitHub → este repositorio → rama `main`.
+3. **Build Type**: `Dockerfile` (está en la raíz; no hay que tocar nada más).
+4. **Domains**: añade tu dominio y activa **HTTPS / Let's Encrypt**.
+   El puerto del contenedor es el **3000**.
+5. **Deploy**.
+
+No hay variables de entorno que configurar. Si quieres cambiar el puerto interno, la app
+respeta `PORT`. El contenedor trae sonda de salud en `/health`, así que Dokploy sabe si
+la app está viva y puede reiniciarla sola.
+
+Cada vez que subas cambios a `main`, redespliega desde Dokploy (o activa el
+*auto deploy* con el webhook que te da).
+
+**Para probar el contenedor en tu equipo** antes de subirlo:
+
+```bash
+docker compose up --build
+```
+
+Descomenta las líneas de `ports` en `docker-compose.yml` y lo tendrás en
+`http://localhost:3000`.
+
+---
+
 ## Licencia
 
 [MIT](LICENSE). Puedes usarlo, copiarlo, modificarlo y distribuirlo, también con fines
