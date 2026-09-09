@@ -647,9 +647,80 @@ function apagadasDe(kind, state) {
   return kind === 'F2L' && negras ? pegatinasUltimaCapa(state) : null;
 }
 
+// --- cantar los giros en voz alta --------------------------------------
+//  Para aprender de verdad hay que mirar el cubo, no la pantalla. Con
+//  esto puesto la app dice cada giro en cuanto toca, y en la guía dice
+//  además el nombre del caso al reconocerlo. Se canta el color y sólo lo
+//  justo para saber hacia dónde: un algoritmo no espera a que termines
+//  de oír "cara verde, al revés de la flecha".
+const CLAVE_CANTAR = 'cubo-magico-cantar';
+let cantando = false;
+let ultimoCantado = null;      // lo último dicho, para no repetirse
+let ultimoCaso = null;         // el caso ya anunciado
+
+function cargarCantar() {
+  try { cantando = localStorage.getItem(CLAVE_CANTAR) === '1'; } catch (e) { cantando = false; }
+}
+
+function alternarCantar() {
+  cantando = !cantando;
+  try { localStorage.setItem(CLAVE_CANTAR, cantando ? '1' : '0'); } catch (e) { /* nada */ }
+  ultimoCantado = null;
+  ultimoCaso = null;
+  if (cantando) ctx.encenderVoz();
+  else ctx.fx.shutUp();
+  pintarBotonesVoz();
+  ctx.toast(cantando ? t('🔊 Te voy cantando los giros') : t('🔇 Ya no canto los giros'));
+}
+
+function pintarBotonesVoz() {
+  for (const id of ['#fr-voz', '#dr-voz']) {
+    const b = $(id);
+    if (!b) continue;
+    b.classList.toggle('on', cantando);
+    b.title = cantando ? t('Dejar de cantar los giros') : t('Cantar los giros en voz alta');
+  }
+}
+
+/** Cómo se canta un giro: el color, y sólo lo justo para saber hacia dónde */
+function textoDelGiro(m) {
+  const cara = ctx.colorFem(m.face);
+  if (m.amount === 2) return t('{cara} doble', { cara });
+  if (m.amount === 3) return t('{cara} al revés', { cara });
+  return cara;
+}
+
+/**
+ * Canta el giro que toca, si ha cambiado.
+ *
+ * La clave lleva cuántos quedan además del giro. Así se vuelve a cantar
+ * el mismo movimiento cuando de verdad toca otra vez (te equivocas y hay
+ * que repetirlo) y en cambio no se repite por un simple repintado, que
+ * los hay a montones: cambiar de algoritmo, apagar la última capa…
+ */
+function cantarGiro(m, quedan, prefacio) {
+  if (!cantando) return;
+  if (!m) { ultimoCantado = null; return; }
+  const clave = quedan + ':' + moveToString(m) + (prefacio || '');
+  if (clave === ultimoCantado) return;
+  ultimoCantado = clave;
+  ctx.fx.sayMany(prefacio ? [prefacio, textoDelGiro(m)] : [textoDelGiro(m)]);
+}
+
+/** En la guía se dice también el nombre del caso, pero sólo al reconocerlo */
+function cantarCaso(caso, m, quedan) {
+  const nombre = caso && caso.name ? t(caso.name) : null;
+  const nuevo = !!nombre && nombre !== ultimoCaso;
+  if (nombre) ultimoCaso = nombre;
+  cantarGiro(m, quedan, nuevo ? nombre : null);
+}
+
 function initFridrich() {
   cargarCasos();
   cargarNegras();
+  cargarCantar();
+  $('#fr-voz').onclick = () => { ctx.fx.click(); alternarCantar(); };
+  $('#dr-voz').onclick = () => { ctx.fx.click(); alternarCantar(); };
   $$('#fr-tabs button').forEach((b) => {
     b.onclick = () => {
       ctx.fx.click();
@@ -681,6 +752,7 @@ function escenaDrill() {
 
 function renderFridrich() {
   const esGuia = pestana === 'guia';
+  pintarBotonesVoz();
   $('#fr-guia').style.display = esGuia ? '' : 'none';
   $('#fr-casos').style.display = esGuia ? 'none' : '';
   // en la lista de casos no hay nada que girar, solo se elige
@@ -692,6 +764,7 @@ function renderFridrich() {
   $('#fr-resumen').textContent = t('{n} casos de {set} · {hechos} practicados',
     { n: set.casos.length, set: set.nombre, hechos });
   pintarBotonNegras('#fr-negras', pestana === 'F2L');
+  pintarBotonesVoz();
   const colores = ctx.hexMap();
   const box = $('#fr-lista');
   box.innerHTML = '';
@@ -728,7 +801,10 @@ function renderFridrich() {
 // a medias sin saber como seguir.
 const guia = { kind: null, caso: null, base: null, hist: [], visto: null };
 
-function soltarGuia() { guia.base = null; guia.hist = []; guia.caso = null; }
+function soltarGuia() {
+  guia.base = null; guia.hist = []; guia.caso = null;
+  ultimoCaso = null;
+}
 
 /** ¿`faltan` es lo que queda de `base` habiendo seguido la formula? */
 function esResto(base, faltan) {
@@ -851,6 +927,7 @@ function pintarGuia(kind, caso, base, faltan, hueco) {
 
   const m = faltan[0];
   $('#fr-move').innerHTML = m ? ctx.moveCard(m.face, m.amount) : '';
+  cantarCaso(caso, m, faltan.length);
   $('#fr-tip').innerHTML = !m ? ''
     : m.ajuste ? t('<b>Giro de ajuste</b> antes de la fórmula.')
       : siguiendo ? t('Quedan {n}. Toca el nombre del caso para entrenarlo.', { n: faltan.length })
@@ -859,6 +936,7 @@ function pintarGuia(kind, caso, base, faltan, hueco) {
 
 // --- entrenar un caso ---------------------------------------------------
 function abrirDrill(kind, caso) {
+  ultimoCantado = null;
   drill.kind = kind;
   drill.caso = caso;
   drill.grabando = false;
@@ -938,6 +1016,7 @@ function renderDrill() {
     + celda('media 5', media);
   $('#dr-auto').style.display = ctx.app.mode === 'state' ? 'none' : '';
   pintarBotonNegras('#dr-negras', drill.kind === 'F2L');
+  pintarBotonesVoz();
   renderAlgos();
 
   if (drill.grabando) {
@@ -964,6 +1043,7 @@ function renderDrill() {
     const faltan = restante(drill.ruta);
     $('#dr-formula').innerHTML = pasos(faltan, 14);
     $('#dr-move').innerHTML = faltan[0] ? ctx.moveCard(faltan[0].face, faltan[0].amount) : '';
+    cantarGiro(faltan[0], faltan.length);
     $('#dr-tip').innerHTML = (ctx.app.mode === 'state'
       ? t('Haz estos giros y te dejo el caso puesto. Te aviso al llegar.')
       : t('Haz estos giros, o pulsa <b>⚡ Prepararlo en la pantalla</b>.'))
@@ -986,6 +1066,7 @@ function renderDrill() {
   $('#dr-fase').textContent = t(drill.fase === 'listo' ? '2 · ¡Resuélvelo!' : '⏱️ Corriendo');
   $('#dr-formula').innerHTML = pasos(faltan);
   const m = faltan[0];
+  cantarGiro(m, faltan.length);
   if (m) {
     $('#dr-move').innerHTML = ctx.moveCard(m.face, m.amount);
     $('#dr-tip').innerHTML = t(m.ajuste

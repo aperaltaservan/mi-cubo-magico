@@ -712,6 +712,14 @@ export const EN = {
   'Deja a la vista sólo el par que vas a meter':
     'Leaves only the pair you are about to insert in sight',
 
+  // ---------- cantar los giros ----------
+  'Cantar los giros en voz alta': 'Call the turns out loud',
+  'Dejar de cantar los giros': 'Stop calling the turns',
+  '🔊 Te voy cantando los giros': '🔊 I will call the turns for you',
+  '🔇 Ya no canto los giros': '🔇 I will stop calling the turns',
+  '{cara} al revés': '{cara}, the other way',
+  '{cara} doble': '{cara}, twice',
+
   // ---------- Entrenar un caso ----------
   'Caso': 'Case',
   'Otro caso': 'Another case',

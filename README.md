@@ -280,6 +280,28 @@ Guía los cuatro pasos de punta a punta:
 
 Toca el nombre del caso y saltas a entrenarlo aparte.
 
+### 🔊 Que te cante los giros
+
+El problema de aprender mirando una pantalla es que no estás mirando el cubo. El botón 🔊
+de la barra —está en la **guía** y en el **entrenador**, y es el mismo interruptor— hace que
+la app **diga cada giro en voz alta** en cuanto toca. Así puedes tener los ojos donde hacen
+falta, que es en tus manos.
+
+Canta el **color** y sólo lo justo para saber hacia dónde: *"verde"*, *"verde al revés"*,
+*"verde doble"*. Nada de "cara verde, al revés de la flecha": un algoritmo no espera a que
+termines de oír la frase. En la guía dice además el **nombre del caso** al reconocerlo, así
+que oyes *"Sune. Naranja."* y ya sabes dónde estás sin levantar la vista.
+
+Se acuerda de cómo lo dejaste, y al encenderlo enciende también la voz de la app: si no,
+sería un interruptor que no hace nada.
+
+Lo delicado no es hablar, es **no repetirse**. Estas pantallas se repintan por muchas cosas
+que no son un giro —cambias de algoritmo preferido, apagas la última capa, vuelves a entrar—
+y cantar el mismo movimiento cada vez sería insoportable. Por eso lo que se recuerda no es
+el giro sino *"este giro, quedando estos"*: así se calla en un repintado y en cambio **sí**
+vuelve a cantarlo cuando de verdad toca otra vez, que es cuando te equivocas y hay que
+repetir el movimiento.
+
 ### Entrenador de casos — los 119, completos
 
 | | Casos | Agrupados por |

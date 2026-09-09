@@ -2325,6 +2325,9 @@ function boot() {
   sections.init({
     app, go, toast, fx, hexMap, hexOf, startGame,
     moveCard, colorFem, padEn, sinCubo, t, idioma,
+    // cantar los giros no sirve de nada con la voz apagada, así que
+    // encenderla es parte de encender eso
+    encenderVoz: () => { if (!fx.voiceOn) toggleVoice(); },
     get lastMove() { return app.lastMove; },
     newScene: (host, size) => new Cube3D(host, { size, colors: hexMap() }),
     setState: (st) => {
