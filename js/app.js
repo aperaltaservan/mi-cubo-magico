@@ -16,6 +16,7 @@ import { lessonById, LESSONS } from './lessons.js';
 import { PATRONES, patronPorId } from './patrones.js';
 import { giroDeTecla, escribiendo, construirPad } from './entrada.js';
 import { t, idioma, fijarIdioma, IDIOMAS, traducirDOM, sinTraducir } from './i18n.js';
+import { enIOS } from './plataforma.js';
 import * as sections from './sections.js';
 
 // ------------------------------------------------------------
@@ -634,6 +635,7 @@ let padPantalla = null;
 
 /** ¿Estamos sin cubo, o sea, hay que dar nosotros los giros? */
 function sinCubo() { return !(app.cube && app.cube.connected); }
+
 
 /** Mete el teclado de pantalla en `pantalla`, o lo quita con null */
 function padEn(pantalla) {
@@ -1571,17 +1573,47 @@ function boot() {
   $('#btn-voice').onclick = toggleVoice;
   $('#btn-voice2').onclick = toggleVoice;
 
-  if (!SmartCube.available) {
+  // En iPhone y iPad no hay Bluetooth en el navegador y no lo va a haber:
+  // Apple obliga a que todos usen el motor de Safari, así que Chrome y
+  // Firefox tampoco pueden. Decirle a alguien con un iPhone que abra
+  // Chrome o que ejecute un .bat no le sirve de nada, así que ahí se le
+  // manda a una pantalla que explica lo que sí puede hacer.
+  if (!SmartCube.available && enIOS()) {
+    $('#btn-connect').onclick = () => { fx.click(); go('ios'); };
+    $('#home-note').innerHTML = t('En iPhone, Safari no puede usar el Bluetooth. '
+      + '<b>Toca arriba</b> y te cuento cómo conectarlo igualmente.');
+  } else if (!SmartCube.available) {
     $('#btn-connect').disabled = true;
     $('#btn-connect').style.opacity = .5;
-    $('#home-note').innerHTML =
-      'Tu navegador no tiene <b>Bluetooth Web</b>.<br>Abre esta página con <b>Chrome</b> o <b>Edge</b> ' +
-      'desde <code>http://localhost:8080</code> (ejecuta <code>INICIAR.bat</code>).';
+    $('#home-note').innerHTML = t('Tu navegador no tiene <b>Bluetooth Web</b>.<br>'
+      + 'Ábrela con <b>Chrome</b> o <b>Edge</b> desde <code>http://localhost:8080</code> '
+      + '(ejecuta <code>INICIAR.bat</code>).');
   } else if (!window.isSecureContext) {
-    $('#home-note').innerHTML =
-      'Para usar el Bluetooth abre la página desde <code>http://localhost:8080</code> ' +
-      '(ejecuta <code>INICIAR.bat</code>), no con doble clic en el archivo.';
+    $('#home-note').innerHTML = t('Para usar el Bluetooth abre la página desde '
+      + '<code>http://localhost:8080</code> (ejecuta <code>INICIAR.bat</code>), '
+      + 'no con doble clic en el archivo.');
   }
+
+  $('#ios-sincubo').onclick = () => { fx.click(); $('#btn-nocube').click(); };
+  $('#ios-url').textContent = location.href.replace(/^https?:\/\//, '');
+  $('#ios-copiar').onclick = async () => {
+    fx.click();
+    try {
+      await navigator.clipboard.writeText(location.href);
+      toast(t('Enlace copiado. Ábrelo en Bluefy.'), 3000);
+    } catch (e) {
+      // Si el navegador no deja tocar el portapapeles, al menos se deja
+      // la dirección seleccionada para copiarla de un toque largo.
+      const el = $('#ios-url');
+      const rango = document.createRange();
+      rango.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(rango);
+      el.scrollIntoView({ block: 'center' });
+      toast(t('Ya te la he seleccionado: cópiala y ábrela en Bluefy.'), 3500);
+    }
+  };
 
   pintarIdiomas();
   $('#btn-idioma').onclick = () => {

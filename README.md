@@ -261,6 +261,29 @@ entiende.
 
 ---
 
+## En iPhone y iPad
+
+**Safari no puede hablar por Bluetooth, y no es cosa de esta app.** Apple no implementa
+Web Bluetooth y obliga a que todos los navegadores de iOS usen el motor de Safari, así
+que Chrome, Firefox y Edge en iPhone tienen exactamente el mismo agujero.
+
+La app lo reconoce sola y, en vez de darte un consejo que no sirve, te lleva a una
+pantalla con las dos salidas:
+
+1. **Sin el cubo.** El tutorial, el cronómetro, los patrones, los juegos y el entrenador
+   de Fridrich funcionan perfectos en Safari; los giros los das en la pantalla.
+
+2. **Con el cubo, usando [Bluefy](https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055).**
+   Es un navegador gratuito de la App Store que trae su propia pila Bluetooth. Instálalo,
+   abre en él la misma dirección y el cubo conecta igual que en un ordenador. La app te
+   deja el enlace copiado de un toque.
+
+> Reconocer un iPad es más traicionero de lo que parece: desde iPadOS 13 se anuncia con
+> el user agent de un Mac de escritorio, y lo único que lo delata es que tiene pantalla
+> táctil. Eso lo cubre `test/plataforma.js`.
+
+---
+
 ## Si algo no va
 
 | Problema | Qué hacer |

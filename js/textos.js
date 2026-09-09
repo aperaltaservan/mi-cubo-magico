@@ -72,10 +72,6 @@ export const EN = {
     '<hr>Copy this and send it over: with it I can add support for your model.',
   '<b>No has elegido ningún aparato</b><br>Si la lista salía vacía, repasa los cuatro puntos de arriba: lo más habitual es que el cubo esté dormido o cogido por el móvil.':
     '<b>You did not pick a device</b><br>If the list came up empty, go back over the four points above: usually the cube is asleep or held by your phone.',
-  'Tu navegador no tiene <b>Bluetooth Web</b>.<br>Abre esta página con <b>Chrome</b> o <b>Edge</b> en un ordenador, o con <b>Bluefy</b> en un iPhone.':
-    'Your browser has no <b>Web Bluetooth</b>.<br>Open this page in <b>Chrome</b> or <b>Edge</b> on a computer, or in <b>Bluefy</b> on an iPhone.',
-  'Para usar el Bluetooth abre la página desde <code>http://localhost:8080</code> o desde una dirección <b>https</b>.':
-    'To use Bluetooth, open the page from <code>http://localhost:8080</code> or from an <b>https</b> address.',
 
   // ---------- Enseñar los colores ----------
   'Enseñar los colores': 'Teach the colours',
@@ -915,4 +911,42 @@ export const EN = {
     'Do the white cross underneath first; then I start guiding you.',
   'SIGUIENDO':
     'IN PROGRESS',
+
+  // ---------- iPhone y iPad ----------
+  'El cubo en iPhone':
+    'The cube on iPhone',
+  'En iPhone y iPad, <b>Safari no puede hablar por Bluetooth</b>. Es cosa de Apple, no de esta app: y como en iOS <b>todos</b> los navegadores (Chrome, Firefox, Edge) usan por dentro el motor de Safari, con ninguno funciona.':
+    'On iPhone and iPad, <b>Safari cannot talk over Bluetooth</b>. That is Apple, not this app: and since on iOS <b>every</b> browser (Chrome, Firefox, Edge) runs the Safari engine underneath, none of them can either.',
+  'Tienes dos caminos:':
+    'You have two options:',
+  '1 · Sin el cubo — funciona todo lo demás':
+    '1 · Without the cube — everything else works',
+  'El tutorial, el cronómetro, los patrones, los juegos y el entrenador de Fridrich van perfectos en Safari. Los giros los das en la pantalla.':
+    'The lessons, the timer, the patterns, the games and the Fridrich trainer all work fine in Safari. You make the turns on screen.',
+  'Jugar sin cubo<small>Aquí mismo, sin instalar nada</small>':
+    'Play without a cube<small>Right here, nothing to install</small>',
+  '2 · Con el cubo — hace falta Bluefy':
+    '2 · With the cube — you need Bluefy',
+  '<b>Bluefy</b> es un navegador gratuito de la App Store que sí trae Bluetooth. Instálalo, abre <b>esta misma dirección</b> dentro de él y el cubo conecta igual que en un ordenador.':
+    '<b>Bluefy</b> is a free browser on the App Store that does have Bluetooth. Install it, open <b>this same address</b> inside it, and the cube connects just as it does on a computer.',
+  'Instala <b>Bluefy</b> desde la App Store.':
+    'Install <b>Bluefy</b> from the App Store.',
+  'Copia el enlace con el botón de abajo.':
+    'Copy the link with the button below.',
+  'Abre Bluefy y <b>pégalo</b> en su barra de direcciones.':
+    'Open Bluefy and <b>paste it</b> into its address bar.',
+  'Copiar el enlace':
+    'Copy the link',
+  '📱 Bluefy en la App Store':
+    '📱 Bluefy on the App Store',
+  'En iPhone, Safari no puede usar el Bluetooth. <b>Toca arriba</b> y te cuento cómo conectarlo igualmente.':
+    'On iPhone, Safari cannot use Bluetooth. <b>Tap above</b> and I will show you how to connect it anyway.',
+  'Tu navegador no tiene <b>Bluetooth Web</b>.<br>Ábrela con <b>Chrome</b> o <b>Edge</b> desde <code>http://localhost:8080</code> (ejecuta <code>INICIAR.bat</code>).':
+    'Your browser has no <b>Web Bluetooth</b>.<br>Open it in <b>Chrome</b> or <b>Edge</b> from <code>http://localhost:8080</code> (run <code>INICIAR.bat</code>).',
+  'Para usar el Bluetooth abre la página desde <code>http://localhost:8080</code> (ejecuta <code>INICIAR.bat</code>), no con doble clic en el archivo.':
+    'To use Bluetooth, open the page from <code>http://localhost:8080</code> (run <code>INICIAR.bat</code>), not by double-clicking the file.',
+  'Enlace copiado. Ábrelo en Bluefy.':
+    'Link copied. Open it in Bluefy.',
+  'Ya te la he seleccionado: cópiala y ábrela en Bluefy.':
+    'I have selected it for you: copy it and open it in Bluefy.',
 };
