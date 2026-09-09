@@ -14,6 +14,7 @@ import { solve } from './solver.js';
 import * as mis from './myalgs.js';
 import { LESSONS, lessonById, nextLesson } from './lessons.js';
 import * as S from './stats.js';
+import { t } from './i18n.js';
 
 let ctx = null;
 const $ = (s) => document.querySelector(s);
@@ -119,15 +120,15 @@ function renderTutorial() {
   box.innerHTML = '';
   const siguiente = nextLesson(st);
   $('#tut-estado').textContent = isSolved(st)
-    ? '¡Cubo resuelto! Mézclalo para practicar.'
-    : 'Ahora te toca: ' + siguiente.emoji + ' ' + siguiente.title;
+    ? t('¡Cubo resuelto! Mézclalo para practicar.')
+    : t('Vas por: {leccion}', { leccion: siguiente.emoji + ' ' + t(siguiente.title) });
   LESSONS.forEach((l, i) => {
     const hecha = l.check(st);
     const p = Math.round(Math.max(0, Math.min(1, l.progreso(st))) * 100);
     const b = document.createElement('button');
     b.className = 'leccion' + (hecha ? ' hecha' : '');
     b.innerHTML = `<div class="n">${hecha ? '✓' : i + 1}</div>
-      <div class="txt"><b>${l.emoji} ${l.title}</b><em>${l.idea}</em>
+      <div class="txt"><b>${l.emoji} ${t(l.title)}</b><em>${t(l.idea)}</em>
       <div class="barra"><i style="width:${p}%"></i></div></div>`;
     b.onclick = () => { ctx.fx.click(); abrirLeccion(l.id); };
     box.appendChild(b);
@@ -137,15 +138,16 @@ function renderTutorial() {
 function abrirLeccion(id) {
   leccionActual = id;
   const l = lessonById(id);
-  $('#les-titulo').textContent = l.emoji + ' ' + l.title;
-  $('#les-idea').textContent = l.idea;
-  $('#les-texto').innerHTML = l.texto.map((t) => '<p>' + t + '</p>').join('');
-  $('#les-truco').innerHTML = '💡 ' + l.truco;
+  $('#les-titulo').textContent = l.emoji + ' ' + t(l.title);
+  $('#les-idea').textContent = t(l.idea);
+  $('#les-texto').innerHTML = l.texto.map((p) => '<p>' + t(p) + '</p>').join('');
+  $('#les-truco').innerHTML = '💡 ' + t(l.truco);
   $('#les-formula').innerHTML = l.demo ? chips(l.demo) : '';
   $('#les-demo').style.display = l.demo ? '' : 'none';
-  $('#les-demo').textContent = '▶️ ' + (l.demoNombre || 'Ver el movimiento');
+  $('#les-demo').textContent = t('▶️ {nombre}',
+    { nombre: t(l.demoNombre || 'Ver el movimiento') });
   $('#les-demo2').style.display = l.demo2 ? '' : 'none';
-  if (l.demo2) $('#les-demo2').textContent = '▶️ ' + l.demo2Nombre;
+  if (l.demo2) $('#les-demo2').textContent = t('▶️ {nombre}', { nombre: t(l.demo2Nombre) });
   ctx.go('lesson');
   const sc = escena('les-scene');
   sc.render(l.demo ? demoDesde(l.demo) : ctx.app.state);
@@ -190,14 +192,14 @@ function initTimer() {
   $('#tm-nueva').onclick = () => { ctx.fx.click(); nuevaMezcla(); };
   $('#tm-borrar').onclick = () => {
     if (!solves().length) return;
-    if (!confirm('¿Vaciar la sesión? Se borran ' + solves().length + ' tiempos.')) return;
+    if (!confirm(t('¿Vaciar la sesión? Se borran {n} tiempos.', { n: solves().length }))) return;
     sesiones.sesiones[sesiones.actual].solves = [];
     guardar(); renderTimer();
   };
   $('#tm-insp').onclick = () => {
     timer.inspeccion = !timer.inspeccion;
     $('#tm-insp').classList.toggle('on', timer.inspeccion);
-    ctx.toast(timer.inspeccion ? 'Inspección de 15 s activada' : 'Inspección desactivada');
+    ctx.toast(t(timer.inspeccion ? 'Inspección de 15 s activada' : 'Inspección desactivada'));
     renderTimer();
   };
   $$('#tm-penal button').forEach((b) => {
@@ -299,7 +301,7 @@ function empezarInspeccion() {
   timer.penalInsp = 0;
   timer.avisos = 0;
   ctx.fx.tone(440, 0.09, 'sine', 0.12);
-  ctx.fx.say('Inspección');
+  ctx.fx.say(t('Inspección'));
   renderTimer();
   tick();
 }
@@ -332,16 +334,16 @@ function parar() {
   });
   guardar();
   ctx.fx.good();
-  if (penalty === 2) ctx.toast('Inspección pasada de 15 s: +2');
-  else if (penalty === S.DNF) ctx.toast('Inspección pasada de 17 s: DNF');
+  if (penalty === 2) ctx.toast(t('Inspección pasada de 15 s: +2'));
+  else if (penalty === S.DNF) ctx.toast(t('Inspección pasada de 17 s: DNF'));
 
   const s = solves();
   const ao5 = S.average(s, 5);
   if (s.length >= 5 && ao5 !== Infinity && ao5 === S.bestAverage(s, 5)) {
-    ctx.toast('¡Nueva mejor media de 5! ' + S.formatTime(ao5));
+    ctx.toast(t('¡Nueva mejor media de 5! {tiempo}', { tiempo: S.formatTime(ao5) }));
     ctx.fx.fanfare(); ctx.fx.confetti(null, 60);
   } else if (!penalty && S.bestSolve(s) === s[s.length - 1] && s.length > 1) {
-    ctx.toast('¡Nuevo récord personal!');
+    ctx.toast(t('¡Nuevo récord personal!'));
     ctx.fx.fanfare();
   }
   nuevaMezcla();
@@ -352,13 +354,13 @@ function tick() {
     if (timer.fase === 'corriendo') {
       $('#tm-display').textContent = S.formatTime(performance.now() - timer.t0);
     } else if (timer.fase === 'inspeccion') {
-      const t = (performance.now() - timer.t0insp) / 1000;
+      const seg = (performance.now() - timer.t0insp) / 1000;
       // los avisos de 8 y 12 segundos, como canta un juez
-      if (timer.avisos === 0 && t >= 8) { timer.avisos = 1; ctx.fx.tone(660, 0.1, 'sine', 0.12); ctx.fx.say('ocho'); }
-      if (timer.avisos === 1 && t >= 12) { timer.avisos = 2; ctx.fx.tone(760, 0.1, 'sine', 0.12); ctx.fx.say('doce'); }
+      if (timer.avisos === 0 && seg >= 8) { timer.avisos = 1; ctx.fx.tone(660, 0.1, 'sine', 0.12); ctx.fx.say(t('ocho')); }
+      if (timer.avisos === 1 && seg >= 12) { timer.avisos = 2; ctx.fx.tone(760, 0.1, 'sine', 0.12); ctx.fx.say(t('doce')); }
       const disp = $('#tm-display');
-      disp.className = 'timer-big ' + (t > 17 ? 'penal' : t > 15 ? 'penal' : t > 12 ? 'aviso' : 'inspeccion');
-      disp.textContent = t <= 15 ? String(Math.ceil(15 - t)) : (t <= 17 ? '+2' : 'DNF');
+      disp.className = 'timer-big ' + (seg > 15 ? 'penal' : seg > 12 ? 'aviso' : 'inspeccion');
+      disp.textContent = seg <= 15 ? String(Math.ceil(15 - seg)) : (seg <= 17 ? '+2' : 'DNF');
     } else return;
     timer.raf = requestAnimationFrame(paso);
   };
@@ -411,7 +413,7 @@ function timerOnState(state) {
       timer.fase = 'mezclando';
       timer.hist = [];
       ctx.fx.good();
-      ctx.fx.say('Ya está. Ahora aplica la mezcla');
+      ctx.fx.say(t('Ya está. Ahora aplica la mezcla'));
     }
     renderTimer();
     return;
@@ -424,7 +426,7 @@ function timerOnState(state) {
       timer.fase = 'listo';
       timer.fuera = false;
       ctx.fx.good();
-      ctx.fx.say(timer.inspeccion ? 'Mezcla lista. Pulsa para inspeccionar' : 'Listo');
+      ctx.fx.say(t(timer.inspeccion ? 'Mezcla lista. Pulsa para inspeccionar' : 'Listo'));
     }
     renderTimer();
     return;
@@ -459,34 +461,34 @@ function renderTimer() {
   // el numero lo lleva el bucle de dibujo, pero se pone ya al arrancar:
   // asi no se queda un instante con lo que decia antes
   else if (timer.fase === 'corriendo') disp.textContent = S.formatTime(performance.now() - timer.t0);
-  else if (timer.fase === 'armado') disp.textContent = '¡YA!';
+  else if (timer.fase === 'armado') disp.textContent = t('¡YA!');
 
   // lo que se arrastra de la inspeccion, dicho donde se vea
   const notaPenal = timer.fase !== 'corriendo' ? ''
-    : timer.penalInsp === 2 ? ' <b>(+2 de inspección)</b>'
-      : timer.penalInsp === S.DNF ? ' <b>(DNF de inspección)</b>' : '';
+    : timer.penalInsp === 2 ? ' ' + t('<b>(+2 de inspección)</b>')
+      : timer.penalInsp === S.DNF ? ' ' + t('<b>(DNF de inspección)</b>') : '';
 
   if (cubo) {
     const faltan = timer.fase === 'mezclando' ? faltaMezcla() : [];
     est.innerHTML = {
-      resolver: 'El cubo no está resuelto. <b>Te guío para resolverlo</b> y luego mezclamos.',
+      resolver: t('El cubo no está resuelto. <b>Te guío para resolverlo</b> y luego mezclamos.'),
       mezclando: timer.fuera
-        ? '<b>Ese giro no era.</b> Aquí tienes el camino de vuelta: <b>'
-          + faltan.length + '</b> giros.'
-        : 'Sigue la mezcla: <b>quedan ' + faltan.length + '</b> giros.',
-      listo: timer.inspeccion
+        ? t('<b>Ese giro no era.</b> Aquí tienes el camino de vuelta: <b>{n}</b> giros.',
+          { n: faltan.length })
+        : t('Sigue la mezcla: <b>quedan {n}</b> giros.', { n: faltan.length }),
+      listo: t(timer.inspeccion
         ? '<b>Pulsa</b> (o barra espaciadora) y empiezan los <b>15 s de inspección</b>.'
-        : '<b>Listo.</b> El crono arranca en cuanto muevas.',
-      inspeccion: 'Mira el cubo. <b>Al primer giro arranca el crono.</b>',
-      corriendo: 'Corriendo… paro solo al resolverlo.' + notaPenal,
-    }[timer.fase] || 'Sujeta el cubo con el <b>blanco abajo</b> y el <b>verde delante</b>.';
+        : '<b>Listo.</b> El crono arranca en cuanto muevas.'),
+      inspeccion: t('Mira el cubo. <b>Al primer giro arranca el crono.</b>'),
+      corriendo: t('Corriendo… paro solo al resolverlo.') + notaPenal,
+    }[timer.fase] || t('Sujeta el cubo con el <b>blanco abajo</b> y el <b>verde delante</b>.');
   } else {
     est.innerHTML = {
-      corriendo: 'Corriendo. <b>Barra espaciadora</b> o el botón para parar.' + notaPenal,
-      inspeccion: 'Inspección. Mantén pulsado y <b>suelta</b> para arrancar.',
-      preparando: 'Sigue pulsando…',
-      armado: '<b>¡Suelta!</b>',
-    }[timer.fase] || (timer.inspeccion
+      corriendo: t('Corriendo. <b>Barra espaciadora</b> o el botón para parar.') + notaPenal,
+      inspeccion: t('Inspección. Mantén pulsado y <b>suelta</b> para arrancar.'),
+      preparando: t('Sigue pulsando…'),
+      armado: t('<b>¡Suelta!</b>'),
+    }[timer.fase] || t(timer.inspeccion
       ? 'Aplica la mezcla a tu cubo. Luego <b>barra espaciadora</b> (o el botón) '
         + 'y empiezan los <b>15 s de inspección</b>.'
       : 'Aplica la mezcla a tu cubo. Luego <b>mantén la barra</b> (o el botón) '
@@ -510,15 +512,15 @@ function pintarBotonCrono(cubo) {
   if (cubo) {
     const util = timer.fase === 'listo' && timer.inspeccion;
     b.className = (util ? '' : 'hidden ') + 'btn primary';
-    b.textContent = '👁️ Empezar la inspección';
+    b.textContent = t('👁️ Empezar la inspección');
     return;
   }
   b.className = 'btn ' + (timer.fase === 'corriendo' ? 'danger' : 'primary');
-  b.textContent = timer.fase === 'corriendo' ? '⏹️ Parar'
+  b.textContent = t(timer.fase === 'corriendo' ? '⏹️ Parar'
     : timer.fase === 'armado' ? '¡Suelta!'
       : timer.fase === 'preparando' ? 'Sigue pulsando…'
         : timer.fase === 'inspeccion' ? '▶️ Mantén y suelta para arrancar'
-          : timer.inspeccion ? '👁️ Empezar la inspección' : '▶️ Arrancar';
+          : timer.inspeccion ? '👁️ Empezar la inspección' : '▶️ Arrancar');
 }
 
 /**
@@ -637,7 +639,8 @@ function renderFridrich() {
 
   const set = SETS[pestana];
   const hechos = set.casos.filter((c) => statsDe(pestana, c.id).intentos > 0).length;
-  $('#fr-resumen').textContent = `${set.casos.length} casos de ${set.nombre} · ${hechos} practicados`;
+  $('#fr-resumen').textContent = t('{n} casos de {set} · {hechos} practicados',
+    { n: set.casos.length, set: set.nombre, hechos });
   const box = $('#fr-lista');
   box.innerHTML = '';
   for (const grupo of set.grupos) {
@@ -645,16 +648,17 @@ function renderFridrich() {
     if (!delGrupo.length) continue;
     const cab = document.createElement('div');
     cab.className = 'grupo-cab';
-    cab.textContent = grupo + ' · ' + delGrupo.length;
+    cab.textContent = t(grupo) + ' · ' + delGrupo.length;
     box.appendChild(cab);
     for (const c of delGrupo) {
       const st = statsDe(pestana, c.id);
       const b = document.createElement('button');
       if (st.intentos) b.classList.add('hecho');
-      const veces = st.intentos === 1 ? '1 intento' : st.intentos + ' intentos';
-      b.innerHTML = `<div><b>${c.name}</b><em>${st.intentos
-        ? 'mejor ' + S.formatTime(st.mejor) + ' · ' + veces
-        : mis.algsDe(pestana, c).length + ' algoritmos'}</em></div>`;
+      const veces = st.intentos === 1 ? t('1 intento')
+        : t('{n} intentos', { n: st.intentos });
+      b.innerHTML = `<div><b>${t(c.name)}</b><em>${st.intentos
+        ? t('mejor {tiempo} · {veces}', { tiempo: S.formatTime(st.mejor), veces })
+        : t('{n} algoritmos', { n: mis.algsDe(pestana, c).length })}</em></div>`;
       b.onclick = () => { ctx.fx.click(); abrirDrill(pestana, c); };
       box.appendChild(b);
     }
@@ -701,7 +705,7 @@ function renderGuia() {
   // 2) miramos el cubo y buscamos el caso
   const r = recognise(st);
   $('#fr-paso').textContent = {
-    cruz: '1 · La cruz', F2L: '2 · F2L', OLL: '3 · OLL', PLL: '4 · PLL', hecho: '✅ Resuelto',
+    cruz: t('1 · La cruz'), F2L: t('2 · F2L'), OLL: t('3 · OLL'), PLL: t('4 · PLL'), hecho: t('✅ Resuelto'),
   }[r.paso] || r.paso;
 
   if (r.caso && r.kind) {
@@ -731,8 +735,8 @@ function renderGuia() {
     guia.hist = [];
     guia.hueco = { hueco: r.sacar.hueco };
     pintarGuia(null, guia.caso, r.sacar.moves, r.sacar.moves, guia.hueco);
-    $('#fr-tip').innerHTML = 'Las piezas de este par están metidas donde no toca. '
-      + 'Con estos tres giros salen arriba y ya se pueden colocar.';
+    $('#fr-tip').innerHTML = t('Las piezas de este par están metidas donde no toca. '
+      + 'Con estos tres giros salen arriba y ya se pueden colocar.');
     return;
   }
 
@@ -742,38 +746,38 @@ function renderGuia() {
     try {
       const plan = solve(st);
       const hasta = [];
-      let t = st;
+      let prueba = st;
       for (const m of plan.moves) {
-        if (CROSS_DONE(t)) break;
-        t = applyMove(t, m.face, m.amount);
+        if (CROSS_DONE(prueba)) break;
+        prueba = applyMove(prueba, m.face, m.amount);
         hasta.push(m);
       }
       if (hasta.length) {
         guia.kind = null; guia.caso = { name: 'La cruz blanca' }; guia.base = hasta;
         guia.hist = []; guia.hueco = null;
         pintarGuia(null, guia.caso, hasta, hasta);
-        $('#fr-tip').innerHTML = 'La cruz se hace a ojo, sin fórmula. Te la guío para que '
-          + 'no te quedes parado, pero con práctica la verás sola.';
+        $('#fr-tip').innerHTML = t('La cruz se hace a ojo, sin fórmula. Te la guío para que '
+          + 'no te quedes parado, pero con práctica la verás sola.');
         return;
       }
     } catch (e) { /* estado imposible: seguimos abajo */ }
   }
 
-  $('#fr-caso').textContent = r.texto;
+  $('#fr-caso').textContent = t(r.texto);
   $('#fr-move').innerHTML = '';
   $('#fr-alg').innerHTML = '';
   $('#fr-tip').textContent = r.paso === 'cruz'
-    ? 'Haz primero la cruz blanca abajo; entonces empiezo a guiarte.'
-    : r.paso === 'hecho' ? 'Mézclalo y te voy diciendo cada caso.' : '';
+    ? t('Haz primero la cruz blanca abajo; entonces empiezo a guiarte.')
+    : r.paso === 'hecho' ? t('Mézclalo y te voy diciendo cada caso.') : '';
   $('#fr-caso').onclick = null;
   $('#fr-caso').style.cursor = '';
 }
 
 function pintarGuia(kind, caso, base, faltan, hueco) {
   const siguiendo = faltan.length < base.length;
-  $('#fr-caso').innerHTML = (siguiendo ? '<span class="siguiendo">SIGUIENDO</span><br>' : '')
-    + caso.name
-    + (hueco ? '<small>hueco de la cara ' + ctx.colorFem(hueco.hueco) + '</small>' : '');
+  $('#fr-caso').innerHTML = (siguiendo ? '<span class="siguiendo">' + t('SIGUIENDO') + '</span><br>' : '')
+    + t(caso.name)
+    + (hueco ? t('<small>hueco de la cara {color}</small>', { color: ctx.colorFem(hueco.hueco) }) : '');
   $('#fr-caso').onclick = kind ? () => abrirDrill(kind, caso) : null;
   $('#fr-caso').style.cursor = kind ? 'pointer' : '';
 
@@ -791,9 +795,9 @@ function pintarGuia(kind, caso, base, faltan, hueco) {
   const m = faltan[0];
   $('#fr-move').innerHTML = m ? ctx.moveCard(m.face, m.amount) : '';
   $('#fr-tip').innerHTML = !m ? ''
-    : m.ajuste ? '<b>Giro de ajuste</b> antes de la fórmula.'
-      : siguiendo ? 'Quedan ' + faltan.length + '. Toca el nombre del caso para entrenarlo.'
-        : 'Toca el nombre del caso para entrenarlo aparte.';
+    : m.ajuste ? t('<b>Giro de ajuste</b> antes de la fórmula.')
+      : siguiendo ? t('Quedan {n}. Toca el nombre del caso para entrenarlo.', { n: faltan.length })
+        : t('Toca el nombre del caso para entrenarlo aparte.');
 }
 
 // --- entrenar un caso ---------------------------------------------------
@@ -808,7 +812,7 @@ function abrirDrill(kind, caso) {
   drill.setup = setupFor(caso);
   drill.objetivo = applyAlg(solvedState(), drill.setup);
   drill.base = solutionFrom(drill.objetivo, mis.algElegido(kind, caso), kind);
-  $('#dr-titulo').textContent = kind + ' · ' + caso.name;
+  $('#dr-titulo').textContent = kind + ' · ' + t(caso.name);
   ctx.go('drill');
   renderDrill();
   escena('dr-scene').render(drill.objetivo);
@@ -838,35 +842,35 @@ function renderDrill() {
   renderAlgos();
 
   if (drill.grabando) {
-    $('#dr-fase').textContent = '🔴 Grabando tu algoritmo';
+    $('#dr-fase').textContent = t('🔴 Grabando tu algoritmo');
     $('#dr-move').innerHTML = '';
     $('#dr-formula').innerHTML = drill.grabados.length ? chips(drill.grabados) : '';
-    $('#dr-tip').innerHTML = 'Resuelve el caso a tu manera. Paro solo al terminarlo, '
-      + 'o pulsa <b>⏹ Parar</b>.';
+    $('#dr-tip').innerHTML = t('Resuelve el caso a tu manera. Paro solo al terminarlo, '
+      + 'o pulsa <b>⏹ Parar</b>.');
     return;
   }
 
   if (drill.fase === 'preparar') {
-    $('#dr-fase').textContent = '1 · Prepara el caso';
+    $('#dr-fase').textContent = t('1 · Prepara el caso');
     $('#dr-move').innerHTML = '';
     $('#dr-formula').innerHTML = chips(drill.setup);
     $('#dr-tip').innerHTML = ctx.app.mode === 'state'
-      ? 'Con el cubo <b>resuelto</b>, aplica esta mezcla. Te aviso cuando llegues.'
-      : 'Pulsa <b>⚡ Prepararlo en la pantalla</b> y luego resuélvelo'
-        + (ctx.sinCubo() ? ' con el teclado.' : ' con tu cubo.');
+      ? t('Con el cubo <b>resuelto</b>, aplica esta mezcla. Te aviso cuando llegues.')
+      : t('Pulsa <b>⚡ Prepararlo en la pantalla</b> y luego resuélvelo')
+        + ' ' + t(ctx.sinCubo() ? 'con el teclado.' : 'con tu cubo.');
     $('#dr-tiempo').textContent = '—';
     return;
   }
   if (drill.fase === 'hecho') {
-    $('#dr-fase').textContent = '✅ Conseguido';
+    $('#dr-fase').textContent = t('✅ Conseguido');
     $('#dr-move').innerHTML = '';
     $('#dr-formula').innerHTML = chips(drill.base || []);
-    $('#dr-tip').textContent = 'Pulsa 🔀 arriba para otro caso.';
+    $('#dr-tip').textContent = t('Pulsa 🔀 arriba para otro caso.');
     return;
   }
 
   const faltan = restante();
-  $('#dr-fase').textContent = drill.fase === 'listo' ? '2 · ¡Resuélvelo!' : '⏱️ Corriendo';
+  $('#dr-fase').textContent = t(drill.fase === 'listo' ? '2 · ¡Resuélvelo!' : '⏱️ Corriendo');
   $('#dr-formula').innerHTML = faltan.map((m, i) => {
     const fondo = i === 0 ? `background:${ctx.hexOf(m.face)};color:#1c1030` : '';
     return `<span class="${i === 0 ? 'now' : ''}" style="${fondo}">${moveToString(m)}${m.ajuste ? '*' : ''}</span>`;
@@ -874,11 +878,11 @@ function renderDrill() {
   const m = faltan[0];
   if (m) {
     $('#dr-move').innerHTML = ctx.moveCard(m.face, m.amount);
-    $('#dr-tip').innerHTML = m.ajuste
+    $('#dr-tip').innerHTML = t(m.ajuste
       ? '<b>Giro de ajuste</b>: coloca la cara de arriba antes de la fórmula.'
       : (drill.kind === 'F2L'
         ? 'Junta la esquina con su arista y mete el par en su hueco.'
-        : 'Sigue la fórmula. El asterisco marca los giros de ajuste.');
+        : 'Sigue la fórmula. El asterisco marca los giros de ajuste.'));
   }
 }
 
@@ -886,7 +890,8 @@ function renderDrill() {
 function renderAlgos() {
   const lista = mis.algsDe(drill.kind, drill.caso);
   const sel = mis.indiceElegido(drill.kind, drill.caso);
-  $('#dr-algos-n').textContent = lista.length === 1 ? '1 guardado' : lista.length + ' guardados';
+  $('#dr-algos-n').textContent = lista.length === 1 ? t('1 guardado')
+    : t('{n} guardados', { n: lista.length });
   const box = $('#dr-algos');
   box.innerHTML = '';
   lista.forEach((a, i) => {
@@ -910,8 +915,8 @@ function renderAlgos() {
     box.appendChild(fila);
   });
   // se graba de los giros que llegan, vengan del cubo o del teclado
-  $('#dr-grabar').innerHTML = drill.grabando ? '⏹ Parar'
-    : ctx.sinCubo() ? '🔴 Grabar con el teclado' : '🔴 Grabar con el cubo';
+  $('#dr-grabar').innerHTML = t(drill.grabando ? '⏹ Parar'
+    : ctx.sinCubo() ? '🔴 Grabar con el teclado' : '🔴 Grabar con el cubo');
   $('#dr-grabar').classList.toggle('grabando', drill.grabando);
 }
 
@@ -939,7 +944,7 @@ function guardarAlgoritmo(texto) {
   const r = mis.anadir(drill.kind, drill.caso, v.alg);
   if (!r.ok) { ctx.toast(r.error, 2600); return false; }
   ctx.fx.good();
-  ctx.toast('✅ Guardado y elegido como preferido');
+  ctx.toast(t('✅ Guardado y elegido como preferido'));
   recalcularBase();
   return true;
 }
@@ -948,14 +953,14 @@ function guardarAlgoritmo(texto) {
 function alternarGrabacion() {
   if (drill.grabando) { terminarGrabacion(false); return; }
   if (drill.fase === 'preparar') {
-    ctx.toast('Prepara antes el caso: así sé desde dónde grabas', 3000);
+    ctx.toast(t('Prepara antes el caso: así sé desde dónde grabas'), 3000);
     return;
   }
   drill.grabando = true;
   drill.grabados = [];
   drill.estadoAlEmpezar = ctx.app.state.slice();
   ctx.fx.tone(660, 0.12, 'square', 0.14);
-  ctx.toast('🔴 Grabando: resuelve el caso a tu manera');
+  ctx.toast(t('🔴 Grabando: resuelve el caso a tu manera'));
   renderDrill();
 }
 
@@ -963,17 +968,18 @@ function terminarGrabacion(automatico) {
   drill.grabando = false;
   const movs = drill.grabados.slice();
   drill.grabados = [];
-  if (!movs.length) { ctx.toast('No has hecho ningún giro'); renderDrill(); return; }
+  if (!movs.length) { ctx.toast(t('No has hecho ningún giro')); renderDrill(); return; }
   const texto = mis.limpiarGrabacion(movs);
-  if (!texto) { ctx.toast('Sólo has girado la cara de arriba'); renderDrill(); return; }
+  if (!texto) { ctx.toast(t('Sólo has girado la cara de arriba')); renderDrill(); return; }
   if (!automatico && !resuelveElCaso(texto, drill.caso, drill.kind)) {
-    ctx.toast('❌ Eso no resuelve el caso, no lo guardo', 3200);
+    ctx.toast(t('❌ Eso no resuelve el caso, no lo guardo'), 3200);
     ctx.fx.oops();
     renderDrill();
     return;
   }
-  if (confirm('¿Guardar este algoritmo?\n\n' + texto
-    + '\n\n(' + movs.length + ' giros grabados, ' + texto.split(' ').length + ' tras limpiar los ajustes)')) {
+  if (confirm(t('¿Guardar este algoritmo?') + '\n\n' + texto + '\n\n'
+    + t('({n} giros grabados, {limpios} tras limpiar los ajustes)',
+      { n: movs.length, limpios: texto.split(' ').length }))) {
     guardarAlgoritmo(texto);
   } else {
     renderDrill();

@@ -15,22 +15,23 @@
   <section id="screen-home" class="screen active">
     <div class="spacer"></div>
     <div class="big-emoji">🧩</div>
-    <h1>Mi Cubo Mágico</h1>
-    <p class="lead">Aprende a resolver el cubo paso a paso</p>
+    <h1 data-i18n>Mi Cubo Mágico</h1>
+    <p class="lead" data-i18n>Aprende a resolver el cubo paso a paso</p>
 
     <button class="btn primary" id="btn-connect">
       <span class="emoji">🔵</span>
-      <span>Conectar mi cubo<small>Cubo inteligente Xiaomi / GiiKER</small></span>
+      <span data-i18n>Conectar mi cubo<small>Cubo inteligente Xiaomi / GiiKER</small></span>
     </button>
 
     <button class="btn blue" id="btn-nocube">
       <span class="emoji">🎮</span>
-      <span>Jugar sin cubo<small>Con el teclado o los botones de la pantalla</small></span>
+      <span data-i18n>Jugar sin cubo<small>Con el teclado o los botones de la pantalla</small></span>
     </button>
 
-    <button class="btn ghost" id="btn-scan">🔍 No sale mi cubo en la lista</button>
+    <button class="btn ghost" id="btn-scan" data-i18n>🔍 No sale mi cubo en la lista</button>
 
     <div class="spacer"></div>
+    <div class="idiomas" id="idiomas"></div>
     <p class="note" id="home-note"></p>
   </section>
 
@@ -38,34 +39,34 @@
   <section id="screen-scan" class="screen">
     <div class="topbar">
       <button class="icon-btn" data-go="home">←</button>
-      <div class="title">Buscar el cubo</div>
+      <div class="title" data-i18n>Buscar el cubo</div>
     </div>
-    <p class="note" style="text-align:left">
+    <p class="note" style="text-align:left" data-i18n>
       Tu cubo debería salir en la lista con un nombre que empieza por <b>Gi</b>
       (por ejemplo <code>GiC41183</code>). Si no sale, es que no está emitiendo.
       Repasa esto por orden:
     </p>
     <ol class="note" style="text-align:left;line-height:1.7">
-      <li><b>La pila.</b> El Xiaomi Smart Rubik's Cube lleva <b>pila de botón</b>
+      <li data-i18n><b>La pila.</b> El Xiaomi Smart Rubik's Cube lleva <b>pila de botón</b>
         (no se carga por USB). Si está gastada, el cubo enciende a ratos pero no
         llega a emitir. Es la causa más habitual: prueba con una pila nueva.</li>
-      <li><b>Despierta el cubo</b>: gira una cara justo antes de darle a buscar.
+      <li data-i18n><b>Despierta el cubo</b>: gira una cara justo antes de darle a buscar.
         Se duerme en un par de minutos y deja de anunciarse.</li>
-      <li><b>Ciérralo en el móvil</b>. Si la app del cubo lo tiene cogido, el
+      <li data-i18n><b>Ciérralo en el móvil</b>. Si la app del cubo lo tiene cogido, el
         ordenador no lo verá. Ciérrala y desconéctalo del móvil.</li>
-      <li><b>Quítalo de los dispositivos de Windows</b> si lo emparejaste alguna vez
+      <li data-i18n><b>Quítalo de los dispositivos de Windows</b> si lo emparejaste alguna vez
         (Configuración → Bluetooth). Estos cubos no se emparejan: el navegador
         habla con ellos directamente.</li>
-      <li><b>Bluetooth del ordenador</b>: <span id="scan-avail">comprobando…</span></li>
+      <li><span data-i18n><b>Bluetooth del ordenador</b>:</span> <span id="scan-avail">comprobando…</span></li>
     </ol>
-    <p class="note" style="text-align:left">
+    <p class="note" style="text-align:left" data-i18n>
       El botón de abajo busca <b>sin ningún filtro</b>. Sirve para saber de quién es
       la culpa: si salen otros aparatos pero no el cubo, el problema es del cubo;
       si no sale absolutamente nada, es del Bluetooth del ordenador.
     </p>
     <button class="btn primary" id="btn-scan-all">
       <span class="emoji">🔍</span>
-      <span>Ver todos los aparatos<small>Sin filtros: busca el tuyo en la lista</small></span>
+      <span data-i18n>Ver todos los aparatos<small>Sin filtros: busca el tuyo en la lista</small></span>
     </button>
     <p class="note" id="scan-note"></p>
     <div id="scan-report" class="instr hidden" style="text-align:left;font-size:.8rem"></div>
@@ -76,7 +77,7 @@
   <section id="screen-cal" class="screen">
     <div class="topbar">
       <button class="icon-btn" data-go="menu">←</button>
-      <div class="title">Enseñar los colores</div>
+      <div class="title" data-i18n>Enseñar los colores</div>
     </div>
     <div class="steps" id="cal-prog"></div>
     <div class="spacer"></div>
@@ -89,88 +90,89 @@
     <div id="cal-choice" class="swatches hidden"></div>
     <div class="spacer"></div>
     <button class="btn primary" id="cal-start">Empezar</button>
-    <button class="btn ghost" id="cal-skip">Saltar (arriesgado)</button>
+    <button class="btn ghost" id="cal-skip" data-i18n>Saltar (arriesgado)</button>
   </section>
 
   <!-- ============ MENÚ ============ -->
   <section id="screen-menu" class="screen">
     <div class="topbar">
-      <div class="title">Mi Cubo Mágico</div>
+      <div class="title" data-i18n>Mi Cubo Mágico</div>
       <button class="chip" id="chip-sync">·</button>
-      <button class="icon-btn on" id="btn-voice" title="Voz">🔊</button>
+      <button class="icon-btn" id="btn-idioma" title="Idioma / Language">🌍</button>
+      <button class="icon-btn on" id="btn-voice" title="Voz" data-i18n-title>🔊</button>
     </div>
 
     <button class="btn primary" data-go="kids">
       <span class="emoji">👶</span>
-      <span>Para peques<small>Juegos para empezar de cero</small></span>
+      <span data-i18n>Para peques<small>Juegos para empezar de cero</small></span>
     </button>
 
     <button class="btn blue" data-go="tutorial">
       <span class="emoji">📚</span>
-      <span>Aprender a resolverlo<small>Método principiante, lección a lección</small></span>
+      <span data-i18n>Aprender a resolverlo<small>Método principiante, lección a lección</small></span>
     </button>
 
     <button class="btn" data-go="timer">
       <span class="emoji">⏱️</span>
-      <span>Cronómetro<small>Mezclas y medias al estilo WCA</small></span>
+      <span data-i18n>Cronómetro<small>Mezclas y medias al estilo WCA</small></span>
     </button>
 
     <button class="btn" data-go="patrones">
       <span class="emoji">🎨</span>
-      <span>Patrones<small>Dibujos con el cubo, paso a paso</small></span>
+      <span data-i18n>Patrones<small>Dibujos con el cubo, paso a paso</small></span>
     </button>
 
     <button class="btn" data-go="fridrich">
       <span class="emoji">🚀</span>
-      <span>Fridrich (CFOP)<small>F2L, OLL y PLL con estadísticas</small></span>
+      <span data-i18n>Fridrich (CFOP)<small>F2L, OLL y PLL con estadísticas</small></span>
     </button>
 
     <div class="spacer"></div>
     <p class="note" id="menu-note"></p>
-    <button class="btn ghost" id="btn-recal">🎨 Volver a enseñar los colores</button>
-    <button class="btn ghost" id="btn-diag">🔧 Diagnóstico</button>
+    <button class="btn ghost" id="btn-recal" data-i18n>🎨 Volver a enseñar los colores</button>
+    <button class="btn ghost" id="btn-diag" data-i18n>🔧 Diagnóstico</button>
   </section>
 
   <!-- ============ PARA PEQUES ============ -->
   <section id="screen-kids" class="screen">
     <div class="topbar">
       <button class="icon-btn" data-go="menu">←</button>
-      <div class="title">Para peques</div>
+      <div class="title" data-i18n>Para peques</div>
     </div>
     <button class="btn primary" data-game="explore">
       <span class="emoji">🎈</span>
-      <span>Conoce tu cubo<small>Gira caras y aprende sus colores</small></span>
+      <span data-i18n>Conoce tu cubo<small>Gira caras y aprende sus colores</small></span>
     </button>
     <button class="btn blue" data-game="undo">
       <span class="emoji">🔙</span>
-      <span>Deshaz la mezcla<small>Del 1 al 8 · el juego para empezar</small></span>
+      <span data-i18n>Deshaz la mezcla<small>Del 1 al 8 · el juego para empezar</small></span>
     </button>
     <button class="btn" data-game="simon">
       <span class="emoji">🐵</span>
-      <span>El mono dice<small>Repite la secuencia · juego de memoria</small></span>
+      <span data-i18n>El mono dice<small>Repite la secuencia · juego de memoria</small></span>
     </button>
     <button class="btn" data-game="solve">
       <span class="emoji">🏆</span>
-      <span>Resuélvelo conmigo<small>El método completo, paso a paso</small></span>
+      <span data-i18n>Resuélvelo conmigo<small>El método completo, paso a paso</small></span>
     </button>
     <div class="spacer"></div>
-    <p class="note">Con 4 años, empieza por <b>Deshaz la mezcla</b> y <b>El mono dice</b>.</p>
+    <p class="note" data-i18n>Con 4 años, empieza por <b>Deshaz la mezcla</b> y <b>El mono dice</b>.</p>
   </section>
 
   <!-- ============ TUTORIAL ============ -->
   <section id="screen-tutorial" class="screen">
     <div class="topbar">
       <button class="icon-btn" data-go="menu">←</button>
-      <div class="title">Aprender a resolverlo</div>
+      <div class="title" data-i18n>Aprender a resolverlo</div>
     </div>
     <p class="lead" id="tut-estado">Ocho pasos. Uno cada vez.</p>
     <button class="btn primary" id="tut-curso">
       <span class="emoji">▶️</span>
-      <span>Curso guiado<small>De principio a fin, pasando de paso solo</small></span>
+      <span data-i18n>Curso guiado<small>De principio a fin, pasando de paso solo</small></span>
     </button>
     <div id="tut-lista"></div>
     <div class="spacer"></div>
-    <p class="note">Toca un paso para ver la explicación y practicarlo con tu cubo.</p>
+    <p class="note" data-i18n>Toca un paso para ver la explicación y practicarlo con tu cubo.</p>
   </section>
 
   <section id="screen-lesson" class="screen">
@@ -189,7 +191,7 @@
       <button class="btn ghost" id="les-demo">▶️ Ver el movimiento</button>
       <button class="btn ghost" id="les-demo2" style="display:none"></button>
     </div>
-    <button class="btn primary" id="les-practicar">🎯 Practicar con mi cubo</button>
+    <button class="btn primary" id="les-practicar" data-i18n>🎯 Practicar con mi cubo</button>
     <div class="spacer"></div>
   </section>
 
@@ -197,8 +199,8 @@
   <section id="screen-timer" class="screen">
     <div class="topbar">
       <button class="icon-btn" data-go="menu">←</button>
-      <div class="title">Cronómetro</div>
-      <button class="icon-btn" id="tm-insp" title="Inspección 15s">👁️</button>
+      <div class="title" data-i18n>Cronómetro</div>
+      <button class="icon-btn" id="tm-insp" title="Inspección 15s" data-i18n-title>👁️</button>
     </div>
     <div class="scramble" id="tm-scramble">—</div>
     <div id="tm-scene" class="scene" style="height:168px;margin:2px 0 0"></div>
@@ -216,8 +218,8 @@
     <div class="historial" id="tm-historial"></div>
     <div class="spacer"></div>
     <div class="row">
-      <button class="btn ghost" id="tm-nueva">🔀 Otra mezcla</button>
-      <button class="btn ghost" id="tm-borrar">🗑️ Vaciar sesión</button>
+      <button class="btn ghost" id="tm-nueva" data-i18n>🔀 Otra mezcla</button>
+      <button class="btn ghost" id="tm-borrar" data-i18n>🗑️ Vaciar sesión</button>
     </div>
   </section>
 
@@ -228,7 +230,7 @@
       <div class="title">Fridrich (CFOP)</div>
     </div>
     <div class="tabs" id="fr-tabs">
-      <button data-tab="guia" class="on">Guía</button>
+      <button data-tab="guia" class="on" data-i18n>Guía</button>
       <button data-tab="F2L">F2L<em>41</em></button>
       <button data-tab="OLL">OLL<em>57</em></button>
       <button data-tab="PLL">PLL<em>21</em></button>
@@ -243,7 +245,7 @@
         <p class="kidtip" id="fr-tip"></p>
       </div>
       <div class="pad-slot"></div>
-      <p class="note">Mientras resuelves te digo en qué paso estás y qué caso de OLL o PLL
+      <p class="note" data-i18n>Mientras resuelves te digo en qué paso estás y qué caso de OLL o PLL
       tienes delante, con su algoritmo.</p>
     </div>
     <div id="fr-casos" style="display:none">
@@ -258,7 +260,7 @@
     <div class="topbar">
       <button class="icon-btn" data-go="fridrich">←</button>
       <div class="title" id="dr-titulo">Caso</div>
-      <button class="icon-btn" id="dr-siguiente" title="Otro caso">🔀</button>
+      <button class="icon-btn" id="dr-siguiente" title="Otro caso" data-i18n-title>🔀</button>
     </div>
     <div id="dr-scene" class="scene" style="height:200px"></div>
     <div class="instr">
@@ -267,19 +269,19 @@
       <div class="formula" id="dr-formula"></div>
       <p class="kidtip" id="dr-tip"></p>
     </div>
-    <button class="btn ghost" id="dr-auto">⚡ Prepararlo en la pantalla</button>
+    <button class="btn ghost" id="dr-auto" data-i18n>⚡ Prepararlo en la pantalla</button>
     <div class="pad-slot"></div>
     <div class="timer-big" id="dr-tiempo" style="font-size:2.4rem;margin:8px 0">—</div>
     <div class="statgrid" id="dr-stats"></div>
 
     <div class="algos-cab">
-      <b>Algoritmos</b>
+      <b data-i18n>Algoritmos</b>
       <span id="dr-algos-n"></span>
     </div>
     <div class="algos" id="dr-algos"></div>
     <div class="row">
       <button class="btn ghost" id="dr-grabar">🔴 Grabar con el cubo</button>
-      <button class="btn ghost" id="dr-escribir">✏️ Escribir</button>
+      <button class="btn ghost" id="dr-escribir" data-i18n>✏️ Escribir</button>
     </div>
     <div class="spacer"></div>
   </section>
@@ -288,12 +290,12 @@
   <section id="screen-patrones" class="screen">
     <div class="topbar">
       <button class="icon-btn" data-go="menu">←</button>
-      <div class="title">Patrones</div>
+      <div class="title" data-i18n>Patrones</div>
     </div>
-    <p class="lead">Dibujos que puedes hacer con el cubo. Te guío giro a giro.</p>
+    <p class="lead" data-i18n>Dibujos que puedes hacer con el cubo. Te guío giro a giro.</p>
     <div class="patrones" id="pat-lista"></div>
     <div class="spacer"></div>
-    <p class="note">Todos salen del cubo <b>resuelto</b>. Si no lo está, primero te ayudo
+    <p class="note" data-i18n>Todos salen del cubo <b>resuelto</b>. Si no lo está, primero te ayudo
     a resolverlo.</p>
   </section>
 
@@ -301,12 +303,12 @@
   <section id="screen-levels" class="screen">
     <div class="topbar">
       <button class="icon-btn" data-go="menu">←</button>
-      <div class="title">Deshaz la mezcla</div>
+      <div class="title" data-i18n>Deshaz la mezcla</div>
     </div>
-    <p class="lead">Elige cuántos movimientos quieres deshacer</p>
+    <p class="lead" data-i18n>Elige cuántos movimientos quieres deshacer</p>
     <div class="levels" id="levels"></div>
     <div class="spacer"></div>
-    <p class="note">Empieza por el 1. Cuando lo consigas se abre el siguiente.</p>
+    <p class="note" data-i18n>Empieza por el 1. Cuando lo consigas se abre el siguiente.</p>
   </section>
 
   <!-- ============ JUEGO ============ -->
@@ -314,9 +316,9 @@
     <div class="topbar">
       <button class="icon-btn" data-go="menu">←</button>
       <div class="title" id="play-title">Juego</div>
-      <button class="icon-btn" id="btn-detalle" title="Explicar cada movimiento">🔍</button>
-      <button class="icon-btn" id="btn-hint" title="Pista">💡</button>
-      <button class="icon-btn on" id="btn-voice2" title="Voz">🔊</button>
+      <button class="icon-btn" id="btn-detalle" title="Explicar cada movimiento" data-i18n-title>🔍</button>
+      <button class="icon-btn" id="btn-hint" title="Pista" data-i18n-title>💡</button>
+      <button class="icon-btn on" id="btn-voice2" title="Voz" data-i18n-title>🔊</button>
     </div>
 
     <div id="scene" class="scene"></div>
@@ -341,31 +343,31 @@
   <section id="screen-diag" class="screen">
     <div class="topbar">
       <button class="icon-btn" data-go="menu">←</button>
-      <div class="title">Diagnóstico</div>
+      <div class="title" data-i18n>Diagnóstico</div>
     </div>
     <div class="instr" style="text-align:left">
-      <p style="margin:.2em 0"><b>Estado:</b> <span id="d-conn">—</span></p>
-      <p style="margin:.2em 0"><b>Batería:</b> <span id="d-bat">—</span></p>
-      <p style="margin:.2em 0"><b>Último giro:</b> <span id="d-move">—</span></p>
-      <p style="margin:.2em 0"><b>El cubo:</b> <span id="d-state">—</span></p>
-      <p style="margin:.2em 0"><b>Paquete:</b> <code id="d-raw" style="font-size:.72rem;word-break:break-all">—</code></p>
-      <p style="margin:.6em 0 .2em"><b>Códigos del cubo → cara y color:</b></p>
+      <p style="margin:.2em 0"><b data-i18n>Estado:</b> <span id="d-conn">—</span></p>
+      <p style="margin:.2em 0"><b data-i18n>Batería:</b> <span id="d-bat">—</span></p>
+      <p style="margin:.2em 0"><b data-i18n>Último giro:</b> <span id="d-move">—</span></p>
+      <p style="margin:.2em 0"><b data-i18n>El cubo:</b> <span id="d-state">—</span></p>
+      <p style="margin:.2em 0"><b data-i18n>Paquete:</b> <code id="d-raw" style="font-size:.72rem;word-break:break-all">—</code></p>
+      <p style="margin:.6em 0 .2em"><b data-i18n>Códigos del cubo → cara y color:</b></p>
       <p style="margin:.2em 0"><code id="d-frame" style="font-size:.8rem">—</code></p>
     </div>
     <button class="btn ghost" id="d-invert">🔁 El cubo gira al revés</button>
-    <p class="note">Si al girar una cara la app dice otra cara distinta, vuelve a enseñar
+    <p class="note" data-i18n>Si al girar una cara la app dice otra cara distinta, vuelve a enseñar
     los colores. Si gira en el sentido contrario, pulsa el botón de arriba.</p>
     <div class="spacer"></div>
   </section>
 
   <footer id="pie">
     <a href="https://peraltalberto.com" target="_blank" rel="noopener noreferrer">
-      Creado por <b>peraltalberto.com</b>
+      <span data-i18n>Creado por</span> <b>peraltalberto.com</b>
     </a>
     <span class="sep">·</span>
     <a href="https://github.com/aperaltaservan/mi-cubo-magico" target="_blank" rel="noopener noreferrer">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
-      Código en GitHub
+      <span data-i18n>Código en GitHub</span>
     </a>
   </footer>
 </div>

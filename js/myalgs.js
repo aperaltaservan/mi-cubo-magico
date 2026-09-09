@@ -32,6 +32,8 @@ function ficha(kind, id) {
 }
 
 /** Todos los algoritmos de un caso: los de serie y los tuyos */
+import { t } from './i18n.js';
+
 export function algsDe(kind, caso) {
   const f = ficha(kind, caso.id);
   const serie = [caso.alg, ...(caso.alt || [])].filter(Boolean);
@@ -65,14 +67,16 @@ export function elegir(kind, caso, indice) {
  */
 export function validar(algTexto, caso, kind, resuelve) {
   const limpio = String(algTexto).trim();
-  if (!limpio) return { ok: false, error: 'No has escrito nada.' };
+  if (!limpio) return { ok: false, error: t('No has escrito nada.') };
   let movs;
   try { movs = expandAlg(limpio); }
-  catch (e) { return { ok: false, error: 'No entiendo "' + e.message.split(': ')[1] + '".' }; }
-  if (!movs.length) return { ok: false, error: 'Ese algoritmo no mueve nada.' };
-  if (movs.length > 40) return { ok: false, error: 'Demasiado largo (más de 40 giros).' };
+  catch (e) {
+    return { ok: false, error: t('No entiendo "{que}".', { que: e.message.split(': ')[1] }) };
+  }
+  if (!movs.length) return { ok: false, error: t('Ese algoritmo no mueve nada.') };
+  if (movs.length > 40) return { ok: false, error: t('Demasiado largo (más de 40 giros).') };
   if (!resuelve(limpio, caso, kind)) {
-    return { ok: false, error: 'Ese algoritmo no resuelve este caso. Compruébalo.' };
+    return { ok: false, error: t('Ese algoritmo no resuelve este caso. Compruébalo.') };
   }
   return { ok: true, alg: limpio };
 }
@@ -81,7 +85,7 @@ export function anadir(kind, caso, alg) {
   const f = ficha(kind, caso.id);
   const serie = [caso.alg, ...(caso.alt || [])].filter(Boolean);
   if (serie.includes(alg) || f.propios.includes(alg)) {
-    return { ok: false, error: 'Ese algoritmo ya está en la lista.' };
+    return { ok: false, error: t('Ese algoritmo ya está en la lista.') };
   }
   f.propios.push(alg);
   f.elegido = serie.length + f.propios.length - 1;   // el nuevo pasa a ser el preferido

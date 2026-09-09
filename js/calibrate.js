@@ -13,6 +13,8 @@
 //  determinado por la geometria real del cubo, sin suposiciones.
 // ============================================================
 
+import { t } from './i18n.js';
+
 export const COLORS = ['blanco', 'amarillo', 'verde', 'azul', 'rojo', 'naranja'];
 
 export const COLOR_HEX = {
@@ -43,7 +45,7 @@ export function buildMaps(codeColor, rightColor) {
   for (const solverFace of Object.keys(wanted)) {
     const color = wanted[solverFace];
     const code = byColor[color];
-    if (!code) return { error: 'Falta la cara ' + color };
+    if (!code) return { error: t('Falta la cara {color}', { color: t(color) }) };
     solverToCode[solverFace] = code;
     codeToSolver[code] = solverFace;
     faceColor[solverFace] = color;
@@ -54,10 +56,11 @@ export function buildMaps(codeColor, rightColor) {
 /** Comprueba que las 6 caras tienen los 6 colores, sin repetir */
 export function checkColors(codeColor) {
   const seen = Object.values(codeColor);
-  if (seen.length !== 6) return 'Faltan caras por girar';
+  if (seen.length !== 6) return t('Faltan caras por girar');
   for (const c of COLORS) {
     if (seen.filter((x) => x === c).length !== 1) {
-      return 'El color ' + c + ' aparece ' + seen.filter((x) => x === c).length + ' veces';
+      return t('El color {color} aparece {veces} veces',
+        { color: t(c), veces: seen.filter((x) => x === c).length });
     }
   }
   return null;
@@ -97,8 +100,9 @@ export class Calibration {
     const code = detail.code;
     if (this.stage === 'colors') {
       if (this.codeColor[code]) {
-        this.ui.warn('Esa cara ya la hemos hecho: es la ' + this.codeColor[code] +
-          '. Gira la <b>' + this.pending[0] + '</b>.');
+        this.ui.warn(t('Esa cara ya la hemos hecho: es la {color}',
+          { color: t(this.codeColor[code]) })
+          + ' ' + t('Gira la <b>{color}</b>.', { color: t(this.pending[0]) }));
         return;
       }
       this.codeColor[code] = this.pending[0];
@@ -110,7 +114,7 @@ export class Calibration {
         const missing = [1, 2, 3, 4, 5, 6].filter((c) => !seen.includes(c));
         if (seen.every((c) => c >= 1 && c <= 6) && missing.length === 1) {
           this.codeColor[missing[0]] = this.pending[0];
-          this.ui.note('La última la deduzco yo 😉');
+          this.ui.note(t('La última la deduzco yo 😉'));
         }
       }
       if (this.pending.length === 0) this.stage = 'right';
@@ -121,11 +125,11 @@ export class Calibration {
     if (this.stage === 'direction') {
       const white = Number(Object.keys(this.codeColor).find((c) => this.codeColor[c] === 'blanco'));
       if (code !== white) {
-        this.ui.warn('Esa no. Gira la cara <b>BLANCA</b> siguiendo la flecha.');
+        this.ui.warn(t('Esa no. Gira la cara <b>BLANCA</b> siguiendo la flecha.'));
         return;
       }
       if (detail.amount === 2) {
-        this.ui.warn('Eso ha sido media vuelta. Gírala <b>solo un cuarto</b>.');
+        this.ui.warn(t('Eso ha sido media vuelta. Gírala <b>solo un cuarto</b>.'));
         return;
       }
       this.invert = detail.amount === 3;

@@ -15,6 +15,7 @@ import { fx } from './fx.js';
 import { lessonById, LESSONS } from './lessons.js';
 import { PATRONES, patronPorId } from './patrones.js';
 import { giroDeTecla, escribiendo, construirPad } from './entrada.js';
+import { t, idioma, fijarIdioma, IDIOMAS, traducirDOM, sinTraducir } from './i18n.js';
 import * as sections from './sections.js';
 
 // ------------------------------------------------------------
@@ -58,7 +59,12 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 function colorOf(face) { return app.faceColor[face] || 'blanco'; }
-function colorFem(face) { return COLOR_FEM[colorOf(face)] || colorOf(face); }
+// En espanol la cara es femenina ("la cara blanca"); en ingles no hay
+// genero, asi que ahi vale el nombre del color tal cual.
+function colorFem(face) {
+  const c = colorOf(face);
+  return idioma() === 'es' ? (COLOR_FEM[c] || c) : t(c);
+}
 function hexOf(face) { return COLOR_HEX[colorOf(face)] || '#888'; }
 function hexMap() {
   const m = {};
@@ -120,11 +126,11 @@ function go(name) {
 }
 
 function toast(msg, ms = 1900) {
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), ms);
+  const aviso = document.createElement('div');
+  aviso.className = 'toast';
+  aviso.textContent = msg;
+  document.body.appendChild(aviso);
+  setTimeout(() => aviso.remove(), ms);
 }
 
 // ------------------------------------------------------------
@@ -204,7 +210,7 @@ function deriveMove(prev, next) {
 function onPhysicalMove(detail) {
   const face = app.codeToSolver[detail.code];
   if (!face) {
-    toast('No conozco esa cara del cubo (código ' + detail.code + ')');
+    toast(t('No conozco esa cara del cubo (código {code})', { code: detail.code }));
     return;
   }
   let amt = detail.amount;
@@ -264,7 +270,7 @@ async function connect(anyDevice) {
       save();
       const yaVisto = localStorage.getItem(KEY + '-ok') === '1';
       localStorage.setItem(KEY + '-ok', '1');
-      toast('¡Conectado! Leo tu cubo directamente');
+      toast(t('¡Conectado! Leo tu cubo directamente'));
       if (yaVisto) go('menu');
       else startGame('explore', null, true);
       return;
@@ -272,12 +278,12 @@ async function connect(anyDevice) {
     app.mode = 'moves';
     const first = localStorage.getItem(KEY + '-cal') !== '2';
     go(first ? 'cal' : 'menu');
-    if (!first) toast('¡Cubo conectado!');
+    if (!first) toast(t('¡Cubo conectado!'));
   } catch (err) {
     if (err && err.name === 'NotFoundError' && !anyDevice) {
       // El usuario cerro el dialogo, o no habia nada que enseñar
       $('#home-note').innerHTML =
-        'No apareció ningún cubo. Pulsa <b>🔍 No sale mi cubo en la lista</b>.';
+        t('No apareció ningún cubo. Pulsa <b>🔍 No sale mi cubo en la lista</b>.');
       return;
     }
     console.error(err);
@@ -289,16 +295,16 @@ async function connect(anyDevice) {
 function reportConnectionError(err) {
   const box = $('#scan-report');
   const msg = (err && err.message) || String(err);
-  let html = '<b>No he podido usar ese aparato</b><br>' + msg;
+  let html = '<b>' + t('No he podido usar ese aparato') + '</b><br>' + msg;
   if (err && err.report && err.report.length) {
-    html += '<hr><b>Lo que expone:</b><br>' + err.report.map((r) =>
+    html += '<hr><b>' + t('Lo que expone:') + '</b><br>' + err.report.map((r) =>
       '<code>' + r.service + '</code><br>' +
       r.chars.map((c) => '&nbsp;&nbsp;· <code>' + c + '</code>').join('<br>')).join('<br>');
-    html += '<hr>Copia esto y pásamelo: con ello puedo dar soporte a tu modelo.';
+    html += '<hr>' + t('Copia esto y pásamelo: con ello puedo dar soporte a tu modelo.');
   } else if (err && err.name === 'NotFoundError') {
-    html = '<b>No has elegido ningún aparato</b><br>Si la lista salía vacía, ' +
-      'repasa los cuatro puntos de arriba: lo más habitual es que el cubo esté ' +
-      'dormido o cogido por el móvil.';
+    html = t('<b>No has elegido ningún aparato</b><br>Si la lista salía vacía, '
+      + 'repasa los cuatro puntos de arriba: lo más habitual es que el cubo esté '
+      + 'dormido o cogido por el móvil.');
   }
   box.innerHTML = html;
   box.classList.remove('hidden');
@@ -334,12 +340,14 @@ const calUI = {
     calProgress(done, 8);
     $('#cal-choice').classList.add('hidden');
     $('#cal-emoji').innerHTML = swatchHTML(color);
-    $('#cal-title').textContent = 'Gira la cara ' + (COLOR_FEM[color] || color).toUpperCase();
+    const nombre = idioma() === 'es' ? (COLOR_FEM[color] || color) : t(color);
+    $('#cal-title').textContent = t('Gira la cara {color}', { color: nombre.toUpperCase() });
     $('#cal-text').innerHTML =
-      'Busca la cara cuyo <b>centro</b> es ' + color + ' y dale un cuarto de vuelta.' +
-      '<br><small>El centro nunca cambia de sitio: es el color de esa cara.</small>';
+      t('Busca la cara cuyo <b>centro</b> es {color} y dale un cuarto de vuelta.',
+        { color: idioma() === 'es' ? color : t(color) })
+      + '<br><small>' + t('El centro nunca cambia de sitio: es el color de esa cara.') + '</small>';
     $('#cal-start').classList.add('hidden');
-    fx.say('Gira la cara ' + COLOR_FEM[color]);
+    fx.say(t('Gira la cara {color}', { color: nombre }));
   },
   gotColor() { fx.good(); },
   note(msg) { toast(msg); },
@@ -354,10 +362,10 @@ const calUI = {
       'display:grid;place-items:center;font-size:1.2rem">?</div></div>' +
       '<div style="width:96px;height:22px;border-radius:8px;margin:4px auto 0;background:' +
       COLOR_HEX.blanco + '"></div>';
-    $('#cal-title').textContent = '¿Qué hay a la derecha?';
+    $('#cal-title').textContent = t('¿Qué hay a la derecha?');
     $('#cal-text').innerHTML =
-      'Coge el cubo con el <b>blanco abajo</b> y el <b>verde de frente</b>.<br>' +
-      '¿Qué color te queda en la cara de la <b>derecha</b>?';
+      t('Coge el cubo con el <b>blanco abajo</b> y el <b>verde de frente</b>.') + '<br>'
+      + t('¿Qué color te queda en la cara de la <b>derecha</b>?');
     const box = $('#cal-choice');
     box.classList.remove('hidden');
     box.innerHTML = '';
@@ -365,11 +373,11 @@ const calUI = {
     for (const color of ['rojo', 'naranja']) {
       const b = document.createElement('button');
       b.style.background = COLOR_HEX[color];
-      b.textContent = color.toUpperCase();
+      b.textContent = t(color).toUpperCase();
       b.onclick = () => { fx.click(); calibration.chooseRight(color); };
       box.appendChild(b);
     }
-    fx.say('Con el blanco abajo y el verde delante, ¿qué color queda a la derecha?');
+    fx.say(t('Con el blanco abajo y el verde delante, ¿qué color queda a la derecha?'));
   },
 
   askDirection() {
@@ -377,20 +385,20 @@ const calUI = {
     $('#cal-choice').classList.add('hidden');
     $('#cal-emoji').innerHTML = arrowSVG(true, '#fff')
       .replace('class="arrow"', 'style="width:120px;height:120px"');
-    $('#cal-title').textContent = 'Último paso';
+    $('#cal-title').textContent = t('Último paso');
     $('#cal-text').innerHTML =
-      'Mira el cubo de frente a la cara <b>BLANCA</b> y gírala un cuarto de vuelta ' +
-      '<b>en el sentido de la flecha</b>.';
-    fx.say('Mirando la cara blanca, gírala en el sentido de la flecha');
+      t('Mira el cubo de frente a la cara <b>BLANCA</b> y gírala un cuarto de vuelta '
+        + '<b>en el sentido de la flecha</b>.');
+    fx.say(t('Mirando la cara blanca, gírala en el sentido de la flecha'));
   },
 
   fail(msg) {
     $('#cal-choice').classList.add('hidden');
     $('#cal-emoji').textContent = '🤔';
-    $('#cal-title').textContent = 'Algo no cuadra';
-    $('#cal-text').innerHTML = msg + '<br>Vamos a repetirlo.';
+    $('#cal-title').textContent = t('Algo no cuadra');
+    $('#cal-text').innerHTML = msg + '<br>' + t('Vamos a repetirlo.');
     $('#cal-start').classList.remove('hidden');
-    $('#cal-start').textContent = 'Volver a empezar';
+    $('#cal-start').textContent = t('Volver a empezar');
     calibration = null;
     fx.oops();
   },
@@ -407,7 +415,7 @@ const calUI = {
     repaint();
     fx.fanfare();
     calProgress(8, 8);
-    toast(result.invert ? 'Listo. Tu cubo cuenta al revés y ya lo sé.' : '¡Listo!');
+    toast(result.invert ? t('Listo. Tu cubo cuenta al revés y ya lo sé.') : t('¡Listo!'));
     startGame('explore', null, true);   // modo comprobación
   },
 };
@@ -439,18 +447,18 @@ function refreshMenu() {
   const connected = app.cube && app.cube.connected;
   if (app.mode === 'state') {
     chip.className = 'chip ok';
-    chip.textContent = '👁️ Leyendo el cubo';
+    chip.textContent = t('👁️ Leyendo el cubo');
   } else if (app.synced) {
     chip.className = 'chip ok';
-    chip.textContent = '✅ Cubo al día';
+    chip.textContent = t('✅ Cubo al día');
   } else {
     chip.className = 'chip warn';
-    chip.textContent = '⚠️ Púlsame con el cubo resuelto';
+    chip.textContent = t('⚠️ Púlsame con el cubo resuelto');
   }
   $('#menu-note').textContent = connected
-    ? 'Conectado a ' + app.cube.name
-    : 'Modo sin cubo: gira con el teclado (U R F D L B, con Mayúsculas al revés) '
-      + 'o con los botones de la pantalla.';
+    ? t('Conectado a {nombre}', { nombre: app.cube.name })
+    : t('Modo sin cubo: gira con el teclado (U R F D L B, con Mayúsculas al revés) '
+      + 'o con los botones de la pantalla.');
   $('#btn-recal').classList.toggle('hidden', !connected || app.mode === 'state');
   $('#btn-diag').classList.toggle('hidden', !connected);
   $$('#btn-voice, #btn-voice2').forEach((b) => b.classList.toggle('on', fx.voiceOn));
@@ -465,7 +473,7 @@ function autoSync() {
   save();
   repaint();
   if (!yaEstaba) {
-    if (!era) toast('He visto que el cubo está resuelto ✅');
+    if (!era) toast(t('He visto que el cubo está resuelto ✅'));
     if (app.screen === 'menu') refreshMenu();
     if (app.game && app.game.resync) app.game.resync();
   }
@@ -481,7 +489,7 @@ function askSync() {
   if (!syncArmed) {
     syncArmed = true;
     chip.className = 'chip warn';
-    chip.textContent = '¿Seguro? Pulsa otra vez';
+    chip.textContent = t('¿Seguro? Pulsa otra vez');
     setTimeout(() => { syncArmed = false; refreshMenu(); }, 4000);
     return;
   }
@@ -495,7 +503,7 @@ function markSynced() {
   save();
   repaint();
   fx.good();
-  toast('¡Genial! Ahora sé cómo está tu cubo');
+  toast(t('¡Genial! Ahora sé cómo está tu cubo'));
   refreshMenu();
 }
 
@@ -531,7 +539,7 @@ function buildPatrones() {
     const hecho = (app.stars['patron-' + pat.id] || 0) > 0;
     if (hecho) b.classList.add('hecho');
     b.innerHTML = netHTML(estadoPatron(pat), hexMap(), 6)
-      + `<b>${pat.emoji} ${pat.nombre}</b>`
+      + `<b>${pat.emoji} ${t(pat.nombre)}</b>`
       + `<em>${'●'.repeat(pat.dificultad)}${'○'.repeat(3 - pat.dificultad)}`
       + `${hecho ? ' ✓' : ''}</em>`;
     b.onclick = () => { fx.click(); startGame('patron', pat.id); };
@@ -542,6 +550,7 @@ function buildPatrones() {
 // ------------------------------------------------------------
 //  Panel de instrucción
 // ------------------------------------------------------------
+let juegoActual = { kind: null, arg: null, verify: false };
 let previewTimer = null;
 function stopPreview() { clearInterval(previewTimer); clearTimeout(showMove._t); previewTimer = null; }
 
@@ -553,8 +562,10 @@ function moveCard(face, amount) {
   const arrow = twice
     ? arrowSVG(true, '#24123f') + '<div class="move-x2">×2</div>'
     : arrowSVG(cw, '#24123f');
+  const pie = twice ? t('dos vueltas enteras')
+    : cw ? t('hacia la flecha') : t('al revés de la flecha');
   return `<div class="face-chip" style="background:${hexOf(face)}"></div>${arrow}`
-    + `<div class="move-text">Cara ${name}<small>${twice ? 'dos vueltas enteras' : cw ? 'hacia la flecha' : 'al revés de la flecha'}</small></div>`;
+    + `<div class="move-text">${t('Cara {cara}', { cara: name })}<small>${pie}</small></div>`;
 }
 
 function showMove(face, amount, extra) {
@@ -578,8 +589,8 @@ function clearMove(html) {
 
 function sayMove(face, amount) {
   const name = colorFem(face);
-  if (amount === 2) fx.say('Cara ' + name + ', dos vueltas');
-  else fx.say('Cara ' + name + (amount === 3 ? ', al revés' : ''));
+  if (amount === 2) fx.say(t('Cara {cara}, dos vueltas', { cara: name }));
+  else fx.say(t('Cara {cara}', { cara: name }) + (amount === 3 ? t(', al revés') : ''));
 }
 
 function setFormula(list, idx) {
@@ -637,7 +648,7 @@ function padEn(pantalla) {
   construirPad(pad, {
     caras: FACES,
     hexOf,
-    corto: (f) => COLOR_SHORT[colorOf(f)] || '',
+    corto: (f) => t(COLOR_SHORT[colorOf(f)] || ''),
     onMove: (f, amount) => doMove(f, amount, false),
   });
 }
@@ -648,53 +659,54 @@ function padEn(pantalla) {
 function gameExplore(verify) {
   const seen = new Set();
   return {
-    title: verify ? '🔍 Comprobación' : '🎈 Conoce tu cubo',
+    get title() { return verify ? t('🔍 Comprobación') : t('🎈 Conoce tu cubo'); },
     start() {
       if (verify) {
         $('#play-tip').textContent = app.mode === 'state'
-          ? 'Leo tu cubo directamente. Gira unas caras y comprueba que la pantalla va igual: colores incluidos.'
-          : 'Gira unas cuantas caras y mira si el cubo de la pantalla hace exactamente lo mismo que el tuyo.';
-        clearMove('<div class="move-text" style="text-align:center">¿Se mueve igual?<small>gira una cara y compara</small></div>');
-        setSteps(6, 0, 'Comprobando que te entiendo bien');
+          ? t('Leo tu cubo directamente. Gira unas caras y comprueba que la pantalla va igual: colores incluidos.')
+          : t('Gira unas cuantas caras y mira si el cubo de la pantalla hace exactamente lo mismo que el tuyo.');
+        clearMove('<div class="move-text" style="text-align:center">' + t('¿Se mueve igual?<small>gira una cara y compara</small>') + '</div>');
+        setSteps(6, 0, t('Comprobando que te entiendo bien'));
         setFormula(null); setBar(0);
         const a = $('#play-action'), b = $('#play-action2');
         a.classList.remove('hidden');
-        a.textContent = '✅ Sí, se mueve igual';
-        a.onclick = () => { fx.click(); fx.fanfare(); toast('¡Perfecto! Ya podemos jugar'); go('menu'); };
+        a.textContent = t('✅ Sí, se mueve igual');
+        a.onclick = () => { fx.click(); fx.fanfare(); toast(t('¡Perfecto! Ya podemos jugar')); go('menu'); };
         b.classList.remove('hidden');
-        b.textContent = '❌ No, hace otra cosa';
+        b.textContent = t('❌ No, hace otra cosa');
         b.onclick = () => {
           fx.click();
           go('cal');
           $('#cal-start').classList.remove('hidden');
-          $('#cal-start').textContent = 'Volver a empezar';
+          $('#cal-start').textContent = t('Volver a empezar');
           $('#cal-emoji').textContent = '🔁';
-          $('#cal-title').textContent = 'Lo intentamos otra vez';
-          $('#cal-text').innerHTML = 'Sin problema. Fíjate en girar la cara cuyo <b>centro</b> ' +
-            'es del color que te pido, y con el cubo quieto en la mano.';
+          $('#cal-title').textContent = t('Lo intentamos otra vez');
+          $('#cal-text').innerHTML = t('Sin problema. Fíjate en girar la cara cuyo <b>centro</b> '
+            + 'es del color que te pido, y con el cubo quieto en la mano.');
         };
-        fx.say('Gira una cara y comprueba si el cubo de la pantalla hace lo mismo');
+        fx.say(t('Gira una cara y comprueba si el cubo de la pantalla hace lo mismo'));
         return;
       }
-      $('#play-tip').textContent = 'Gira las caras que quieras. Te diré de qué color son.';
-      clearMove('<div class="move-text" style="text-align:center">Gira una cara<small>a ver de qué color es</small></div>');
+      $('#play-tip').textContent = t('Gira las caras que quieras. Te diré de qué color son.');
+      clearMove('<div class="move-text" style="text-align:center">' + t('Gira una cara<small>a ver de qué color es</small>') + '</div>');
       setFormula(null);
-      setSteps(6, 0, '¿Cuántos colores encuentras?');
+      setSteps(6, 0, t('¿Cuántos colores encuentras?'));
       setBar(0);
-      fx.say('Gira una cara del cubo');
+      fx.say(t('Gira una cara del cubo'));
     },
     onMove(face, amount) {
       seen.add(face);
-      showMove(face, amount, '¡Muy bien!');
+      showMove(face, amount, t('¡Muy bien!'));
       sayMove(face, amount);
-      setSteps(6, seen.size, verify ? 'Caras reconocidas: ' + seen.size + ' de 6'
-        : 'Colores encontrados: ' + seen.size + ' de 6');
+      setSteps(6, seen.size, verify
+        ? t('Caras reconocidas: {n} de 6', { n: seen.size })
+        : t('Colores encontrados: {n} de 6', { n: seen.size }));
       setBar(seen.size / 6 * 100);
       if (seen.size === 6 && !verify) {
         award('explore', 3);
         fx.fanfare(); fx.confetti();
-        fx.say('¡Bravo! Has encontrado los seis colores');
-        $('#play-tip').textContent = '¡Has encontrado los 6 colores! 🎉';
+        fx.say(t('¡Bravo! Has encontrado los seis colores'));
+        $('#play-tip').textContent = t('¡Has encontrado los 6 colores! 🎉');
       }
     },
   };
@@ -720,7 +732,7 @@ function gameUndo(level) {
     const m = nextUndo();
     if (!m) return;
     hintShown = true;
-    showMove(m.face, m.amount, 'Deshaz este movimiento');
+    showMove(m.face, m.amount, t('Deshaz este movimiento'));
     if (force) sayMove(m.face, m.amount);
   }
 
@@ -729,46 +741,50 @@ function gameUndo(level) {
     hintShown = false;
     const left = simplifyAlg(history).length;
     if (level <= 2) { showHint(false); return; }
-    clearMove('<div class="move-text" style="text-align:center">¿Te acuerdas?<small>Quedan ' + left + '</small></div>');
+    clearMove('<div class="move-text" style="text-align:center">' + t('¿Te acuerdas?<small>Quedan {n}</small>', { n: left }) + '</div>');
     hintTimer = setTimeout(() => showHint(true), 7000);
   }
 
   return {
-    title: '🔙 Nivel ' + level,
+    get title() { return t('🔙 Nivel {n}', { n: level }); },
     start() {
       target = app.state.slice();
-      $('#play-tip').textContent = 'Haz ' + level + (level === 1 ? ' movimiento' : ' movimientos') +
-        ' tú, los que quieras. Yo me los apunto.';
-      clearMove('<div class="move-text" style="text-align:center">Mezcla tú<small>' + level +
-        (level === 1 ? ' movimiento' : ' movimientos') + '</small></div>');
+      const uno = level === 1;
+      $('#play-tip').textContent = uno
+        ? t('Haz {n} movimiento tú, los que quieras. Yo me los apunto.', { n: level })
+        : t('Haz {n} movimientos tú, los que quieras. Yo me los apunto.', { n: level });
+      clearMove('<div class="move-text" style="text-align:center">' + (uno
+        ? t('Mezcla tú<small>{n} movimiento</small>', { n: level })
+        : t('Mezcla tú<small>{n} movimientos</small>', { n: level })) + '</div>');
       setFormula(null);
-      setSteps(level, 0, '🌀 Mezclando');
+      setSteps(level, 0, t('🌀 Mezclando'));
       setBar(0);
-      fx.say('Haz ' + level + (level === 1 ? ' movimiento' : ' movimientos') + ' tú');
+      fx.say(uno ? t('Haz {n} movimiento tú', { n: level })
+        : t('Haz {n} movimientos tú', { n: level }));
     },
     stop() { clearTimeout(hintTimer); },
     onMove(face, amount) {
       if (phase === 'scramble') {
         history.push({ face, amount });
         done++;
-        setSteps(level, done, '🌀 Mezclando');
+        setSteps(level, done, t('🌀 Mezclando'));
         setBar(done / level * 50);
         if (done >= level) {
           phase = 'solve';
-          setSteps(level, 0, '🔍 ¡Ahora al revés!');
-          $('#play-tip').textContent = 'Deshaz los movimientos, del último al primero.';
+          setSteps(level, 0, t('🔍 ¡Ahora al revés!'));
+          $('#play-tip').textContent = t('Deshaz los movimientos, del último al primero.');
           fx.good();
-          fx.say('Ahora deshazlo, del último al primero');
+          fx.say(t('Ahora deshazlo, del último al primero'));
           setTimeout(armHint, 900);
         } else {
-          showMove(face, amount, 'Te quedan ' + (level - done));
+          showMove(face, amount, t('Te quedan {n}', { n: level - done }));
         }
         return;
       }
       // fase de deshacer
       history.push({ face, amount });
       const left = simplifyAlg(history).length;
-      setSteps(level, Math.max(0, level - left), '🔍 Quedan ' + left);
+      setSteps(level, Math.max(0, level - left), t('🔍 Quedan {n}', { n: left }));
       setBar(50 + (level - left) / level * 50);
       if (app.state.join('') === target.join('')) {
         clearTimeout(hintTimer);
@@ -776,14 +792,14 @@ function gameUndo(level) {
         const stars = hintShown ? 2 : 3;
         award('undo' + level, stars);
         if (level >= app.maxLevel && app.maxLevel < 8) { app.maxLevel = level + 1; save(); }
-        clearMove('<div class="move-text" style="text-align:center">¡LO HAS CONSEGUIDO!<small>' +
-          '⭐'.repeat(stars) + '</small></div>');
-        $('#play-tip').textContent = 'El cubo ha vuelto a su sitio 🎉';
+        clearMove('<div class="move-text" style="text-align:center">' + t('¡LO HAS CONSEGUIDO!<small>{estrellas}</small>',
+          { estrellas: '⭐'.repeat(stars) }) + '</div>');
+        $('#play-tip').textContent = t('El cubo ha vuelto a su sitio 🎉');
         setBar(100);
         fx.fanfare(); fx.confetti();
-        fx.say('¡Muy bien! Lo has conseguido');
+        fx.say(t('¡Muy bien! Lo has conseguido'));
         $('#play-action').classList.remove('hidden');
-        $('#play-action').textContent = level < 8 ? '➡️ Siguiente nivel' : '🏠 Volver al menú';
+        $('#play-action').textContent = level < 8 ? t('➡️ Siguiente nivel') : t('🏠 Volver al menú');
         $('#play-action').onclick = () => {
           fx.click();
           if (level < 8) startGame('undo', level + 1); else go('menu');
@@ -820,8 +836,8 @@ function gameSolve() {
       plan = solve(app.state);
     } catch (e) {
       plan = null;
-      clearMove('<div class="move-text" style="text-align:center">Ups…<small>' + e.message + '</small></div>');
-      $('#play-tip').textContent = 'Pon el cubo resuelto y pulsa el botón de arriba para volver a empezar.';
+      clearMove('<div class="move-text" style="text-align:center">' + t('Ups…<small>{error}</small>', { error: e.message }) + '</div>');
+      $('#play-tip').textContent = t('Pon el cubo resuelto y pulsa el botón de arriba para volver a empezar.');
       app.synced = false; save();
       return false;
     }
@@ -834,31 +850,31 @@ function gameSolve() {
     if (!plan) return;
     if (!plan.phases.length) {
       // resuelto
-      clearMove('<div class="move-text" style="text-align:center">¡CUBO RESUELTO!<small>⭐⭐⭐</small></div>');
-      $('#play-tip').textContent = 'Lo has hecho tú. Enséñaselo a todo el mundo 🏆';
+      clearMove('<div class="move-text" style="text-align:center">' + t('¡CUBO RESUELTO!<small>⭐⭐⭐</small>') + '</div>');
+      $('#play-tip').textContent = t('Lo has hecho tú. Enséñaselo a todo el mundo 🏆');
       setFormula(null); setBar(100);
-      setSteps(PHASE_INFO.length, PHASE_INFO.length, '🏆 ¡Terminado!');
+      setSteps(PHASE_INFO.length, PHASE_INFO.length, t('🏆 ¡Terminado!'));
       award('solve', 3);
       fx.fanfare(); fx.confetti(document.body, 160);
-      fx.say('¡Cubo resuelto! Eres un campeón');
+      fx.say(t('¡Cubo resuelto! Eres un campeón'));
       $('#play-action').classList.remove('hidden');
-      $('#play-action').textContent = '🏠 Volver al menú';
+      $('#play-action').textContent = t('🏠 Volver al menú');
       $('#play-action').onclick = () => { fx.click(); go('menu'); };
       return;
     }
     const ph = plan.phases[0];
     const idx = PHASE_INFO.findIndex((p) => p.id === ph.id);
-    setSteps(PHASE_INFO.length, idx, ph.emoji + ' ' + ph.name);
+    setSteps(PHASE_INFO.length, idx, ph.emoji + ' ' + t(ph.name));
     setBar(100 - (plan.length / total) * 100);
 
     const chunk = ph.chunks[ci];
     if (!chunk) { replan(); render(); return; }
     const m = chunk.alg[mi];
     setFormula(chunk.alg, mi);
-    showMove(m.face, m.amount, chunk.hint || ph.kid);
+    showMove(m.face, m.amount, t(chunk.hint || ph.kid));
     if (ph.id !== lastPhaseId) {
       lastPhaseId = ph.id;
-      fx.say(ph.name + '. ' + ph.kid, { rate: 1 });
+      fx.say(t(ph.name) + '. ' + t(ph.kid), { rate: 1 });
       setTimeout(() => sayMove(m.face, m.amount), 300);
     } else {
       sayMove(m.face, m.amount);
@@ -866,15 +882,15 @@ function gameSolve() {
   }
 
   return {
-    title: '🏆 Resuélvelo conmigo',
+    get title() { return t('🏆 Resuélvelo conmigo'); },
     start() {
       $('#play-action').classList.add('hidden');
       if (!app.synced && app.mode !== 'state') {
-        clearMove('<div class="move-text" style="text-align:center">Antes de empezar…<small>necesito saber cómo está tu cubo</small></div>');
-        $('#play-tip').textContent = 'Pon el cubo RESUELTO y pulsa el botón de abajo.';
-        setFormula(null); setSteps(PHASE_INFO.length, 0, 'Preparando');
+        clearMove('<div class="move-text" style="text-align:center">' + t('Antes de empezar…<small>necesito saber cómo está tu cubo</small>') + '</div>');
+        $('#play-tip').textContent = t('Pon el cubo RESUELTO y pulsa el botón de abajo.');
+        setFormula(null); setSteps(PHASE_INFO.length, 0, t('Preparando'));
         $('#play-action').classList.remove('hidden');
-        $('#play-action').textContent = '✅ Ya está resuelto';
+        $('#play-action').textContent = t('✅ Ya está resuelto');
         $('#play-action').onclick = () => {
           markSynced();
           $('#play-action').classList.add('hidden');
@@ -899,7 +915,7 @@ function gameSolve() {
       } else {
         fx.oops();
         replan();
-        $('#play-tip').textContent = 'No pasa nada, seguimos por aquí 😊';
+        $('#play-tip').textContent = t('No pasa nada, seguimos por aquí 😊');
       }
       render();
     },
@@ -909,8 +925,8 @@ function gameSolve() {
     hint() {
       if (!plan || !plan.phases.length) return;
       const ph = plan.phases[0];
-      fx.say(ph.kid, { rate: 1 });
-      $('#play-tip').textContent = ph.goal;
+      fx.say(t(ph.kid), { rate: 1 });
+      $('#play-tip').textContent = t(ph.goal);
     },
   };
 }
@@ -964,18 +980,18 @@ function gameCurso(desdeId) {
     const m = chunk.alg[mi];
     if (!m) { if (replanificar()) pintar(); return; }
 
-    setSteps(LESSONS.length, LESSONS.findIndex((l) => l.id === lec.id), lec.emoji + ' ' + lec.title);
+    setSteps(LESSONS.length, LESSONS.findIndex((l) => l.id === lec.id), lec.emoji + ' ' + t(lec.title));
     setBar(Math.max(0, Math.min(100, lec.progreso(app.state) * 100)));
     setFormula(chunk.alg, mi);
-    showMove(m.face, m.amount, modoDetalle
+    showMove(m.face, m.amount, t(modoDetalle
       ? (detalleDe(chunk.hint) || chunk.hint || lec.idea)
-      : (chunk.hint || lec.idea));
+      : (chunk.hint || lec.idea)));
   }
 
   function presentar(lec) {
     mostrando = lec.id;
-    $('#play-title').textContent = lec.emoji + ' ' + lec.title;
-    fx.sayMany([lec.title + '.', lec.idea, ...lec.texto]);   // la explicacion entera
+    $('#play-title').textContent = lec.emoji + ' ' + t(lec.title);
+    fx.sayMany([t(lec.title) + '.', t(lec.idea), ...lec.texto.map((p) => t(p))]);
   }
 
   function celebrar(siguiente) {
@@ -984,13 +1000,14 @@ function gameCurso(desdeId) {
     if (anterior) award('lesson-' + anterior.id, 3);
     fx.confetti(null, 50);
     fx.fanfare();
-    clearMove('<div class="move-text" style="text-align:center">' +
-      (anterior ? anterior.hecho : 'Paso conseguido') + '<small>siguiente paso…</small></div>');
+    const rotulo = siguiente ? siguiente.emoji + ' ' + t(siguiente.title) : '';
+    clearMove('<div class="move-text" style="text-align:center">' + t(anterior ? anterior.hecho : 'Paso conseguido')
+      + '<small>' + t('siguiente paso…') + '</small></div>');
     $('#play-tip').textContent = siguiente
-      ? 'Muy bien. Ahora: ' + siguiente.emoji + ' ' + siguiente.title : '';
+      ? t('Muy bien. Ahora: {siguiente}', { siguiente: rotulo }) : '';
     setFormula(null);
-    fx.say((anterior ? anterior.hecho + '. ' : '') +
-      (siguiente ? 'Siguiente paso: ' + siguiente.title : ''));
+    fx.say((anterior ? t(anterior.hecho) + '. ' : '')
+      + (siguiente ? t('Siguiente paso: {siguiente}', { siguiente: t(siguiente.title) }) : ''));
     clearTimeout(temporizador);
     temporizador = setTimeout(() => {
       if (app.game !== juego) return;
@@ -1003,28 +1020,28 @@ function gameCurso(desdeId) {
   function terminar() {
     fase = 'fin';
     mostrando = null;
-    clearMove('<div class="move-text" style="text-align:center">¡CUBO RESUELTO!<small>has hecho los ocho pasos</small></div>');
-    $('#play-tip').textContent = 'Ya sabes resolverlo entero. Mézclalo y repítelo hasta que te salga solo.';
+    clearMove('<div class="move-text" style="text-align:center">' + t('¡CUBO RESUELTO!<small>has hecho los ocho pasos</small>') + '</div>');
+    $('#play-tip').textContent = t('Ya sabes resolverlo entero. Mézclalo y repítelo hasta que te salga solo.');
     setFormula(null); setBar(100);
-    setSteps(LESSONS.length, LESSONS.length, '🏆 Curso terminado');
+    setSteps(LESSONS.length, LESSONS.length, t('🏆 Curso terminado'));
     award('curso', 3);
     fx.fanfare(); fx.confetti(document.body, 160);
-    fx.say('¡Cubo resuelto! Has completado los ocho pasos.');
+    fx.say(t('¡Cubo resuelto! Has completado los ocho pasos.'));
     $('#play-action').classList.remove('hidden');
-    $('#play-action').textContent = '📚 Volver al tutorial';
+    $('#play-action').textContent = t('📚 Volver al tutorial');
     $('#play-action').onclick = () => { fx.click(); go('tutorial'); };
   }
 
   const juego = {
-    title: '📚 Curso guiado',
+    get title() { return t('📚 Curso guiado'); },
     start() {
       $('#play-action').classList.add('hidden');
       $('#btn-detalle').classList.toggle('on', modoDetalle);
       if (isSolved(app.state)) {
         fase = 'fin';
-        clearMove('<div class="move-text" style="text-align:center">El cubo está resuelto<small>mézclalo para empezar</small></div>');
-        $('#play-tip').textContent = 'Desordena el cubo y el curso arrancará solo.';
-        setSteps(LESSONS.length, 0, '📚 Curso guiado'); setBar(0);
+        clearMove('<div class="move-text" style="text-align:center">' + t('El cubo está resuelto<small>mézclalo para empezar</small>') + '</div>');
+        $('#play-tip').textContent = t('Desordena el cubo y el curso arrancará solo.');
+        setSteps(LESSONS.length, 0, t('📚 Curso guiado')); setBar(0);
         return;
       }
       fase = 'guiando';
@@ -1061,7 +1078,7 @@ function gameCurso(desdeId) {
       } else {
         fx.oops();
         if (!replanificar()) return;
-        $('#play-tip').textContent = 'No pasa nada, seguimos desde aquí 😊';
+        $('#play-tip').textContent = t('No pasa nada, seguimos desde aquí 😊');
       }
       pintar();
     },
@@ -1074,25 +1091,25 @@ function gameCurso(desdeId) {
     hint() {
       const lec = lessonById(mostrando);
       if (!lec) return;
-      $('#play-tip').textContent = lec.truco.replace(/<[^>]+>/g, '');
-      fx.say(lec.truco);
+      $('#play-tip').textContent = t(lec.truco).replace(/<[^>]+>/g, '');
+      fx.say(t(lec.truco));
     },
 
     detalle() {
       modoDetalle = !modoDetalle;
       $('#btn-detalle').classList.toggle('on', modoDetalle);
-      toast(modoDetalle ? '🔍 Te explico cada movimiento' : 'Modo detalle apagado');
+      toast(modoDetalle ? t('🔍 Te explico cada movimiento') : t('Modo detalle apagado'));
       pintar();
       if (modoDetalle && plan && plan.phases.length) {
         const c = plan.phases[0].chunks[ci];
-        const t = detalleDe(c && c.hint);
-        if (t) fx.say(t);
+        const det = detalleDe(c && c.hint);
+        if (det) fx.say(t(det));
       }
     },
 
     repetir() {
       const lec = lessonById(mostrando);
-      if (lec) fx.sayMany([lec.title + '.', lec.idea, ...lec.texto]);
+      if (lec) fx.sayMany([t(lec.title) + '.', t(lec.idea), ...lec.texto.map((p) => t(p))]);
     },
   };
   return juego;
@@ -1125,22 +1142,22 @@ function gamePatron(id) {
       // haria que la guia cambiase de idea y se quedase dando vueltas.
       if (!plan) {
         try { plan = solve(app.state); pi = 0; } catch (e) {
-          clearMove('<div class="move-text" style="text-align:center">Ups…<small>' + e.message + '</small></div>');
+          clearMove('<div class="move-text" style="text-align:center">' + t('Ups…<small>{error}</small>', { error: e.message }) + '</div>');
           return;
         }
       }
       const m = plan.moves[pi];
       if (!m) { plan = null; pintar(); return; }
-      setSteps(2, 0, '1 · Primero, cubo resuelto');
+      setSteps(2, 0, t('1 · Primero, cubo resuelto'));
       setBar(0);
       setFormula(plan.moves.slice(pi, pi + 10), 0);
-      showMove(m.face, m.amount, 'Los patrones salen del cubo resuelto. Te lo dejo listo.');
+      showMove(m.face, m.amount, t('Los patrones salen del cubo resuelto. Te lo dejo listo.'));
       return;
     }
 
     const faltan = restante();
     if (!faltan.length) { terminar(); return; }
-    setSteps(2, 1, '2 · ' + pat.emoji + ' ' + pat.nombre);
+    setSteps(2, 1, t('2 · {patron}', { patron: pat.emoji + ' ' + t(pat.nombre) }));
     setBar(Math.round((1 - faltan.length / alg.length) * 100));
     const enOrden = faltan.length <= alg.length
       && faltan.every((m, k) => {
@@ -1153,37 +1170,37 @@ function gamePatron(id) {
     const m = faltan[0];
     showMove(m.face, m.amount, '');
     $('#play-tip').innerHTML = objetivoHTML(enOrden
-      ? 'Quedan ' + faltan.length + ' giros para que quede así.'
-      : 'Ese giro no era: te llevo de vuelta.');
+      ? t('Quedan {n} giros para que quede así.', { n: faltan.length })
+      : t('Ese giro no era: te llevo de vuelta.'));
   }
 
   function terminar() {
     fase = 'hecho';
-    clearMove('<div class="move-text" style="text-align:center">' + pat.emoji + ' ¡'
-      + pat.nombre.toUpperCase() + '!<small>mira tu cubo</small></div>');
-    $('#play-tip').innerHTML = objetivoHTML(pat.desc);
+    clearMove('<div class="move-text" style="text-align:center">' + t('{patron} ¡{NOMBRE}!<small>mira tu cubo</small>',
+      { patron: pat.emoji, NOMBRE: t(pat.nombre).toUpperCase() }) + '</div>');
+    $('#play-tip').innerHTML = objetivoHTML(t(pat.desc));
     setFormula(null);
     setBar(100);
-    setSteps(2, 2, '🎨 Patrón terminado');
+    setSteps(2, 2, t('🎨 Patrón terminado'));
     award('patron-' + pat.id, 3);
     fx.fanfare(); fx.confetti();
-    fx.say('¡' + pat.nombre + '! Mira qué bonito');
+    fx.say(t('¡{patron}! Mira qué bonito', { patron: t(pat.nombre) }));
     $('#play-action').classList.remove('hidden');
-    $('#play-action').textContent = '↩️ Deshacerlo';
+    $('#play-action').textContent = t('↩️ Deshacerlo');
     $('#play-action').onclick = () => { fx.click(); startGame('deshacer-patron', id); };
     $('#play-action2').classList.remove('hidden');
-    $('#play-action2').textContent = '🎨 Otro patrón';
+    $('#play-action2').textContent = t('🎨 Otro patrón');
     $('#play-action2').onclick = () => { fx.click(); go('patrones'); };
   }
 
   return {
-    title: pat.emoji + ' ' + pat.nombre,
+    get title() { return pat.emoji + ' ' + t(pat.nombre); },
     start() {
       $('#play-action').classList.add('hidden');
       $('#play-action2').classList.add('hidden');
       fase = isSolved(app.state) ? 'haciendo' : 'resolver';
       hist = [];
-      fx.say(pat.nombre + '. ' + pat.desc, { rate: 1 });
+      fx.say(t(pat.nombre) + '. ' + t(pat.desc), { rate: 1 });
       pintar();
     },
     onMove(face, amount) {
@@ -1212,23 +1229,23 @@ function gameDeshacerPatron(id) {
   function pintar() {
     const faltan = restante();
     if (!faltan.length) {
-      clearMove('<div class="move-text" style="text-align:center">¡CUBO RESUELTO!<small>como estaba</small></div>');
-      $('#play-tip').textContent = 'Listo para otro patrón.';
-      setFormula(null); setBar(100); setSteps(1, 1, '↩️ Deshecho');
+      clearMove('<div class="move-text" style="text-align:center">' + t('¡CUBO RESUELTO!<small>como estaba</small>') + '</div>');
+      $('#play-tip').textContent = t('Listo para otro patrón.');
+      setFormula(null); setBar(100); setSteps(1, 1, t('↩️ Deshecho'));
       fx.fanfare(); fx.confetti();
       $('#play-action').classList.remove('hidden');
-      $('#play-action').textContent = '🎨 Otro patrón';
+      $('#play-action').textContent = t('🎨 Otro patrón');
       $('#play-action').onclick = () => { fx.click(); go('patrones'); };
       return;
     }
-    setSteps(1, 0, '↩️ Deshaciendo ' + pat.nombre);
+    setSteps(1, 0, t('↩️ Deshaciendo {patron}', { patron: t(pat.nombre) }));
     setBar(Math.round((1 - faltan.length / alg.length) * 100));
     setFormula(faltan.slice(0, 12), 0);
-    showMove(faltan[0].face, faltan[0].amount, 'Vamos a dejarlo como estaba.');
+    showMove(faltan[0].face, faltan[0].amount, t('Vamos a dejarlo como estaba.'));
   }
 
   return {
-    title: '↩️ Deshacer ' + pat.nombre,
+    get title() { return t('↩️ Deshacer {patron}', { patron: t(pat.nombre) }); },
     start() { $('#play-action').classList.add('hidden'); $('#play-action2').classList.add('hidden'); pintar(); },
     onMove(face, amount) { hist.push({ face, amount }); pintar(); },
     onJump() { hist = []; pintar(); },
@@ -1261,13 +1278,14 @@ function gameSimon() {
   async function mostrar() {
     fase = 'mirando';
     idx = 0;
-    setSteps(secuencia.length, 0, '🐵 Mira bien: ' + secuencia.length
-      + (secuencia.length === 1 ? ' giro' : ' giros'));
+    setSteps(secuencia.length, 0, secuencia.length === 1
+      ? t('🐵 Mira: {n} giro', { n: secuencia.length })
+      : t('🐵 Mira: {n} giros', { n: secuencia.length }));
     setBar(0);
     setFormula(null);
-    clearMove('<div class="move-text" style="text-align:center">Mira al mono<small>y luego repites tú</small></div>');
-    $('#play-tip').textContent = 'Fíjate bien…';
-    fx.say('Mira');
+    clearMove('<div class="move-text" style="text-align:center">' + t('Mira al mono<small>y luego repites tú</small>') + '</div>');
+    $('#play-tip').textContent = t('Fíjate bien…');
+    fx.say(t('Mira'));
     await new Promise((r) => setTimeout(r, 700));
 
     let st = app.state.slice();
@@ -1283,27 +1301,27 @@ function gameSimon() {
     // el cubo de la pantalla vuelve a como está el de verdad
     if (cube3d) cube3d.render(app.state);
     fase = 'repitiendo';
-    setSteps(secuencia.length, 0, '🐵 ¡Ahora tú! 0 de ' + secuencia.length);
-    clearMove('<div class="move-text" style="text-align:center">¡Ahora tú!<small>repite los '
-      + secuencia.length + '</small></div>');
-    $('#play-tip').textContent = 'Hazlo igual que el mono.';
-    fx.say('¡Ahora tú!');
+    setSteps(secuencia.length, 0, t('🐵 ¡Ahora tú! 0 de {n}', { n: secuencia.length }));
+    clearMove('<div class="move-text" style="text-align:center">' + t('¡Ahora tú!<small>repite los {n} giros</small>',
+      { n: secuencia.length }) + '</div>');
+    $('#play-tip').textContent = t('Hazlo igual que el mono.');
+    fx.say(t('¡Ahora tú!'));
   }
 
   function acierto() {
     idx++;
     fx.tone(700 + idx * 60, 0.09, 'sine', 0.14);
-    setSteps(secuencia.length, idx, '🐵 Vas ' + idx + ' de ' + secuencia.length);
+    setSteps(secuencia.length, idx, t('🐵 Vas {i} de {n}', { i: idx, n: secuencia.length }));
     setBar(idx / secuencia.length * 100);
     if (idx < secuencia.length) return;
     // ronda superada
     const mejor = app.stars[mejorClave] || 0;
     if (secuencia.length > mejor) { app.stars[mejorClave] = secuencia.length; save(); }
-    clearMove('<div class="move-text" style="text-align:center">¡MUY BIEN!<small>ronda '
-      + secuencia.length + ' superada</small></div>');
+    clearMove('<div class="move-text" style="text-align:center">' + t('¡MUY BIEN!<small>ronda {n} superada</small>',
+      { n: secuencia.length }) + '</div>');
     fx.good(); fx.confetti(null, 40);
     if (secuencia.length % 3 === 0) { fx.fanfare(); fx.confetti(null, 90); }
-    fx.say('¡Muy bien!');
+    fx.say(t('¡Muy bien!'));
     setTimeout(() => { if (app.game === juego) nuevaRonda(); }, 1500);
   }
 
@@ -1312,23 +1330,23 @@ function gameSimon() {
     fx.oops();
     const esperado = secuencia[idx];
     clearMove(moveCard(esperado.face, esperado.amount));
-    $('#play-tip').innerHTML = 'Casi. Tocaba <b>' + colorFem(esperado.face).toUpperCase()
-      + '</b>. Tu récord: <b>' + (app.stars[mejorClave] || 0) + '</b>';
+    $('#play-tip').innerHTML = t('Era la cara <b>{color}</b>. Tu récord: <b>{mejor}</b>',
+      { color: colorFem(esperado.face).toUpperCase(), mejor: app.stars[mejorClave] || 0 });
     setFormula(null);
-    fx.say('Casi. Era la cara ' + colorFem(esperado.face));
+    fx.say(t('Casi. Era la cara {color}', { color: colorFem(esperado.face) }));
     $('#play-action').classList.remove('hidden');
-    $('#play-action').textContent = '🔁 Otra vez';
+    $('#play-action').textContent = t('🔁 Otra vez');
     $('#play-action').onclick = () => { fx.click(); startGame('simon'); };
   }
 
   const juego = {
-    title: '🐵 El mono dice',
+    get title() { return t('🐵 El mono dice'); },
     start() {
       $('#play-action').classList.add('hidden');
       $('#play-action2').classList.add('hidden');
       secuencia = [];
       const mejor = app.stars[mejorClave] || 0;
-      if (mejor) toast('Tu récord: ' + mejor + ' giros seguidos');
+      if (mejor) toast(t('Tu récord: {n} giros seguidos', { n: mejor }));
       nuevaRonda();
     },
     onMove(face, amount) {
@@ -1352,6 +1370,7 @@ function gameSimon() {
 //  Motor de juegos
 // ------------------------------------------------------------
 function startGame(kind, arg, verify) {
+  juegoActual = { kind, arg, verify };
   stopGame();
   go('play');
   initCube3D();
@@ -1386,26 +1405,64 @@ function award(id, stars) {
 // ------------------------------------------------------------
 function refreshDiag() {
   const c = app.cube;
-  $('#d-conn').textContent = (c && c.connected ? 'conectado a ' + c.name : 'sin conexión') +
-    (app.mode === 'state' ? ' · leyendo el estado completo' : ' · siguiendo los giros');
+  $('#d-conn').textContent =
+    (c && c.connected ? t('conectado a {nombre}', { nombre: c.name }) : t('sin conexión'))
+    + (app.mode === 'state' ? ' ' + t('· leyendo el estado completo') : ' ' + t('· siguiendo los giros'));
   $('#d-bat').textContent = c && c.battery != null ? c.battery + ' %' : '—';
   $('#d-move').textContent = lastMoveInfo
-    ? 'código ' + lastMoveInfo.code + ' · cantidad ' + lastMoveInfo.amount + '  →  cara ' +
-    (app.codeToSolver[lastMoveInfo.code] || '?') + ' (' +
-    (app.codeColor[lastMoveInfo.code] || 'sin calibrar') + ')'
+    ? t('código {code} · cantidad {amount} → cara {cara}', {
+      code: lastMoveInfo.code,
+      amount: lastMoveInfo.amount,
+      cara: app.codeToSolver[lastMoveInfo.code] || '?',
+    }) + ' (' + t(app.codeColor[lastMoveInfo.code] || 'sin calibrar') + ')'
     : '—';
   $('#d-state').textContent = lastPacket
-    ? (lastPacket.solved ? 'dice que está RESUELTO' : 'dice que está mezclado') +
-      (lastPacket.encrypted ? ' · paquete cifrado (i3s)' : ' · paquete sin cifrar')
+    ? (lastPacket.solved ? t('dice que está RESUELTO') : t('dice que está mezclado'))
+      + ' ' + t(lastPacket.encrypted ? '· paquete cifrado (i3s)' : '· paquete sin cifrar')
     : '—';
   $('#d-raw').textContent = lastPacket
     ? Array.from(lastPacket.bytes).map((b) => b.toString(16).padStart(2, '0')).join(' ')
     : '—';
   $('#d-frame').textContent = Object.keys(app.codeToSolver).sort()
-    .map((c) => c + '→' + app.codeToSolver[c] + ' (' + (app.codeColor[c] || '?') + ')')
-    .join('   ') || 'sin calibrar';
+    .map((c) => c + '→' + app.codeToSolver[c] + ' (' + t(app.codeColor[c] || '?') + ')')
+    .join('   ') || t('sin calibrar');
   $('#d-invert').classList.toggle('on', app.invert);
-  $('#d-invert').textContent = (app.invert ? '✅' : '🔁') + ' El cubo gira al revés';
+  $('#d-invert').textContent = (app.invert ? '✅' : '🔁') + ' ' + t('El cubo gira al revés');
+}
+
+// ------------------------------------------------------------
+//  Idioma
+// ------------------------------------------------------------
+//  El texto estatico lo repinta traducirDOM; lo que dibuja el
+//  JavaScript hay que volver a dibujarlo, y por eso se repite la
+//  pantalla en la que estas. El juego en marcha se reinicia: sus
+//  carteles ya estaban escritos y no se pueden traducir a medias.
+
+function pintarIdiomas() {
+  const box = $('#idiomas');
+  if (!box) return;
+  box.innerHTML = '';
+  for (const [codigo, info] of Object.entries(IDIOMAS)) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'idioma' + (codigo === idioma() ? ' on' : '');
+    b.innerHTML = `<span>${info.bandera}</span>${info.nombre}`;
+    b.onclick = () => { fx.click(); cambiarIdioma(codigo); };
+    box.appendChild(b);
+  }
+}
+
+function cambiarIdioma(codigo) {
+  if (codigo === idioma()) return;
+  fijarIdioma(codigo);          // guarda, marca <html lang> y traduce el HTML
+  document.title = t('Mi Cubo Mágico');
+  pintarIdiomas();
+  fx.setIdioma(codigo);
+  const juego = app.game;
+  const pantalla = app.screen;
+  if (juego && pantalla === 'play') { startGame(juegoActual.kind, juegoActual.arg, juegoActual.verify); }
+  else { go(pantalla); }
+  toast(t('Idioma / Language') + ': ' + IDIOMAS[codigo].nombre);
 }
 
 // ------------------------------------------------------------
@@ -1414,6 +1471,10 @@ function refreshDiag() {
 function boot() {
   load();
   fx.init();
+  document.documentElement.lang = idioma();
+  document.title = t('Mi Cubo Mágico');
+  traducirDOM();
+  fx.setIdioma(idioma());
 
   // Las letras giran el cubo alli donde se ven los botones. Va aqui y no
   // en el cuerpo del modulo para que importar app.js no ate nada por su
@@ -1443,13 +1504,14 @@ function boot() {
     try {
       const ok = await navigator.bluetooth.getAvailability();
       el.innerHTML = ok
-        ? '<b style="color:#8de08d">sí, funciona</b>'
-        : '<b style="color:#ff9a9a">apagado o sin adaptador</b> — enciéndelo en Windows';
-    } catch (e) { el.textContent = 'no lo sé'; }
+        ? '<b style="color:#8de08d">' + t('sí, funciona') + '</b>'
+        : '<b style="color:#ff9a9a">' + t('apagado o sin adaptador') + '</b> '
+          + t('— enciéndelo en Windows');
+    } catch (e) { el.textContent = t('no lo sé'); }
   };
   $('#btn-scan-all').onclick = () => {
     fx.click();
-    $('#scan-note').textContent = 'Elige tu cubo en la lista del navegador…';
+    $('#scan-note').textContent = t('Elige tu cubo en la lista del navegador…');
     connect(true);
   };
 
@@ -1474,11 +1536,11 @@ function boot() {
     go('cal');
     $('#cal-choice').classList.add('hidden');
     $('#cal-start').classList.remove('hidden');
-    $('#cal-start').textContent = 'Empezar';
+    $('#cal-start').textContent = t('Empezar');
     $('#cal-emoji').textContent = '👋';
-    $('#cal-title').textContent = 'Vamos a conocer tu cubo';
-    $('#cal-text').innerHTML = 'Vas a girar las seis caras una vez. Así aprendo tu cubo ' +
-      'de verdad, sin suponer nada.';
+    $('#cal-title').textContent = t('Vamos a conocer tu cubo');
+    $('#cal-text').innerHTML = t('Vas a girar las seis caras una vez. Así aprendo tu cubo '
+      + 'de verdad, sin suposiciones.');
     $('#cal-prog').innerHTML = '';
   };
   $('#btn-diag').onclick = () => go('diag');
@@ -1521,9 +1583,16 @@ function boot() {
       '(ejecuta <code>INICIAR.bat</code>), no con doble clic en el archivo.';
   }
 
+  pintarIdiomas();
+  $('#btn-idioma').onclick = () => {
+    fx.click();
+    const codigos = Object.keys(IDIOMAS);
+    cambiarIdioma(codigos[(codigos.indexOf(idioma()) + 1) % codigos.length]);
+  };
+
   sections.init({
     app, go, toast, fx, hexMap, hexOf, startGame,
-    moveCard, colorFem, padEn, sinCubo,
+    moveCard, colorFem, padEn, sinCubo, t, idioma,
     get lastMove() { return app.lastMove; },
     newScene: (host, size) => new Cube3D(host, { size, colors: hexMap() }),
     setState: (st) => {
@@ -1539,6 +1608,8 @@ function boot() {
   window.cubo = {
     app, fx, go, doMove, startGame,
     startCalibration,
+    // que textos se han pedido y no estaban traducidos
+    sinTraducir, idioma, cambiarIdioma,
     // Simula un paquete del cubo, igual que si llegara por Bluetooth
     feedPacket(raw) {
       app.mode = 'state';

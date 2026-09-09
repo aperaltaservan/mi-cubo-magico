@@ -16,6 +16,8 @@
 //  lo que necesita, así que se puede probar en Node sin navegador.
 // ============================================================
 
+import { t } from './i18n.js';
+
 /** Tecla -> cara. Es la propia notación, en minúscula para comparar. */
 export const TECLAS = { u: 'U', r: 'R', f: 'F', d: 'D', l: 'L', b: 'B' };
 
@@ -64,7 +66,8 @@ export function construirPad(pad, { caras, hexOf, corto, onMove }) {
       const b = document.createElement('button');
       b.type = 'button';
       b.style.background = hexOf(f);
-      b.title = textoGiro(f, amount) + (amount === 3 ? ' (Mayúsculas + ' + f + ')' : '');
+      b.title = textoGiro(f, amount)
+        + (amount === 3 ? ' ' + t('(Mayúsculas + {tecla})', { tecla: f }) : '');
       b.setAttribute('aria-label', textoGiro(f, amount));
       b.innerHTML = `<span aria-hidden="true">${amount === 1 ? '↻' : '↺'}</span>`
         + `<em>${corto(f)}</em>`

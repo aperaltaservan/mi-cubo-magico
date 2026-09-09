@@ -6,6 +6,14 @@ entrenador de Fridrich para quien ya sabe.
 
 Todo funciona en local, sin instalar nada y sin internet.
 
+**La app está en español y en inglés.** Se elige en la pantalla de inicio, o con el
+botón 🌍 del menú. Si no has elegido nunca, arranca en el idioma del navegador.
+
+> **In English:** connect a Xiaomi / GiiKER smart cube over Bluetooth and learn to
+> solve it from scratch, with a guided beginner course, a WCA-style timer and a
+> Fridrich (CFOP) trainer. Pick your language on the start screen. Everything runs
+> locally, with no install and no internet.
+
 ---
 
 ## Cómo se arranca
@@ -409,6 +417,42 @@ test/, dev/       pruebas y utilidades de desarrollo
 
 Desde la consola del navegador hay un manejador para trastear:
 `cubo.app`, `cubo.doMove('R', 1)`, `cubo.fakeMove('U', 1)` (simula un giro del cubo físico).
+
+---
+
+## Idiomas
+
+La clave de cada texto **es el propio texto en español**. No hay que inventarse
+nombres de clave (`home.subtitulo` y cosas así) ni mantenerlos sincronizados: el
+código se sigue leyendo solo.
+
+```js
+t('Gira una cara')                          // en el código
+<p data-i18n>Gira una cara</p>              <!-- en el HTML: la clave es el contenido -->
+t('Te quedan {n}', { n: 3 })                // con huecos
+```
+
+`js/textos.js` lleva únicamente la traducción inglesa, y si a un texto le falta se
+enseña el español antes que un hueco o una clave suelta.
+
+**Para añadir un idioma** hacen falta dos cosas: una entrada en `IDIOMAS`
+(`js/i18n.js`) con su nombre y su locale de voz, y un diccionario como el de
+`textos.js`. Nada más: el HTML ya está marcado y el JavaScript ya pasa por `t()`.
+
+`test/i18n.js` es la red de seguridad. Saca del código **todas** las llamadas
+`t('…')`, todos los nodos `data-i18n` del HTML y todos los textos que viven en los
+datos (lecciones, pasos del solucionador, patrones, nombres de casos y grupos), y
+exige que estén traducidos. Además comprueba que la traducción lleve **las mismas
+etiquetas HTML y los mismos huecos `{…}`** que el original: si no, la página inglesa
+saldría con un `<b>` suelto o con un `{n}` sin rellenar.
+
+Lo que no se traduce a propósito: la notación (`R U R' U'`), los nombres de los casos
+de OLL y PLL, que en el mundo del cubo son los mismos en todos los idiomas (*Sune*,
+*OLL 21 · Double Headlights*, *J (a)*), y los nombres propios de algún patrón
+(*Tetris*, *Superflip*).
+
+La voz cambia con el idioma: se le pide al navegador una voz de ese idioma y, si no
+tiene ninguna, habla con la que haya antes que quedarse muda.
 
 ---
 

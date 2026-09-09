@@ -6,13 +6,24 @@ export const fx = {
   voiceOn: true,
   soundOn: true,
   _voice: null,
+  // Se habla en el idioma de la app. Se guarda el codigo completo
+  // (es-ES) para pedirle al navegador una voz de ese idioma; si no
+  // tiene ninguna, habla con la que sea antes que quedarse muda.
+  _lang: 'es-ES',
+
+  setIdioma(codigo) {
+    this._lang = codigo === 'en' ? 'en-US' : 'es-ES';
+    this._voice = this._pickVoice();
+  },
 
   _pickVoice() {
     if (!('speechSynthesis' in window)) return null;
     const all = speechSynthesis.getVoices();
     if (!all.length) return null;
-    return all.find((v) => /es[-_]ES/i.test(v.lang))
-      || all.find((v) => /^es/i.test(v.lang))
+    const base = this._lang.slice(0, 2);
+    const exacta = new RegExp(this._lang.replace('-', '[-_]'), 'i');
+    return all.find((v) => exacta.test(v.lang))
+      || all.find((v) => new RegExp('^' + base, 'i').test(v.lang))
       || null;
   },
 
@@ -29,7 +40,7 @@ export const fx = {
     if (!this.voiceOn || !('speechSynthesis' in window) || !text) return;
     if (interrupt) speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'es-ES';
+    u.lang = this._lang;
     u.rate = rate;
     u.pitch = 1.15;
     if (this._voice) u.voice = this._voice;
@@ -98,7 +109,7 @@ fx.sayMany = function (textos, alTerminar) {
   if (!limpias.length) { if (alTerminar) alTerminar(); return; }
   limpias.forEach((texto, i) => {
     const u = new SpeechSynthesisUtterance(texto);
-    u.lang = 'es-ES';
+    u.lang = this._lang;
     u.rate = 1;
     u.pitch = 1.1;
     if (this._voice) u.voice = this._voice;
